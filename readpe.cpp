@@ -21,7 +21,7 @@
 
 using namespace std;
 
-class DOSFieldMap;    // Forward declaration
+class DOS_FieldMap;    // Forward declaration
 class COFF_FieldMap;  // Forward declaration
 
 typedef uint8_t Rules;  ///< The base-type of our rules flag.
@@ -40,22 +40,18 @@ protected:
    Rules  rules_;       ///< Encode special processing rules for this Field
 
 public:
-   /// Constructor that takes a label, offset and description.
-   ///
-   /// @param new_offset      The offset into the file's section to the start of the value stored in the file
-   /// @param new_description The description of this Field
-   /// @param new_rules       Encode special processing rules for this Field
-   FieldBase(const size_t     new_offset
-            ,const string     new_description
-            ,const Rules      new_rules )
+   /// Constructor that accepts an offset, description and rules.
+   FieldBase(const size_t     new_offset       ///< The offset into the file's section to the start of the value stored in the file
+            ,const string     new_description  ///< The description of this Field
+            ,const Rules      new_rules )      ///< Encode special processing rules for this Field
             :offset_      ( new_offset )                                      // Member initialization
             ,description_ { boost::algorithm::trim_copy( new_description ) }  // List initialization
             ,rules_       ( new_rules )                                       // Member initialization
    {}
 
-   /// @return The offset to this Field (relative to the start of this group of fields)
+
    virtual size_t get_offset() const {
-      return offset_;
+      return offset_;  ///< @return The offset to this Field (relative to the start of this group of fields)
    }
 
    /// @return The description for this Field
@@ -63,53 +59,38 @@ public:
       return description_;
    }
 
-   /// We don't really need the type, what we really want is the string...
-   ///
-   /// @return The type of Field (as a string)
-   virtual const char* get_type() const = 0;
-
    /// @return `true` if this Field is healthy.  `false` if there's a problem.
    virtual bool validate() const {
       // Nothing to validate for offset_
-
-      if( description_.empty() ) {
-         return false;
-      }
+      if( description_.empty() ) { return false; }
 
       return true;
    }
 
-   /// We don't really want the value, what we really want is the string version of the value...
-   ///
-   /// @return The value of the Field (as a string)
-   virtual string get_value() const = 0;
+   /// We don't really want the value, what we really want is the value as a string...
+   virtual string get_value() const = 0;  ///< @return The value of the Field (as a string)
 
    /// Read the PE File and set the Field value
-   ///
-   /// @param file_buffer The contents of the PE File
-   /// @param file_offset The file offset to this group of fields (not necessarily this particular field)
-   virtual void set_value( vector<char>& file_buffer, size_t file_offset ) = 0;
+   virtual void set_value(
+           vector<char>& file_buffer  ///< The contents of the PE File
+          ,size_t file_offset ) = 0;  ///< The file offset to this group of fields (not necessarily this particular field)
 };
 
 
-/// Field is a template that creates classes to store a Field with a specified type T.
+/// Field is a template that creates classes to store a Field with a specific type
 template <typename T>
 class Field : public FieldBase {
-   friend DOSFieldMap;     ///< DOSFieldMap needs to directly access `field_` for validation
+   friend DOS_FieldMap;     ///< DOS_FieldMap needs to directly access `field_` for validation
    friend COFF_FieldMap;   ///< COFF_FieldMap needs to directly access `field_` for validation
 
 protected:
    T value_;  ///< The value of this Field
 
 public:
-   /// Constructor that takes an offset, description and rules.
-   ///
-   /// @param new_offset      The offset into the file's section to the start of the value stored in the file
-   /// @param new_description The description of this Field
-   /// @param new_rules       The decorator rules for this Field
-   Field(   const size_t      new_offset
-           ,const string new_description
-           ,const Rules       new_rules
+   /// Construct a Field with an offset, description and decorator rules.
+   Field(   const size_t      new_offset  ///< The offset into the file's section to the start of the value stored in the file
+           ,const string new_description  ///< The description of this Field
+           ,const Rules       new_rules   ///< The decorator rules for this Field
    ) : FieldBase( new_offset, new_description, new_rules )
            ,value_       { T() }
    {}
@@ -150,42 +131,22 @@ public:
    }
 
    /// Set the value of the Field
-   ///
-   /// @param file_buffer The contents of the PE File
-   /// @param file_offset The offset to this header in the file
-   virtual void set_value( vector<char>& file_buffer, size_t file_offset ) override {
+   virtual void set_value(
+           vector<char>& file_buffer  ///< The contents of the PE File
+          ,size_t file_offset         ///< The offset to this header in the file
+          ) override {
       memcpy(&value_, &file_buffer[file_offset + offset_], sizeof(value_));
-   }
-
-   /// @return Get the type of this Field (as a string)
-   virtual const char* get_type() const override {
-      return typeid(T).name();
    }
 };
 
 
-/// A Map of Field objects
+/// A generic Map of Field objects
 class FieldMap : public map<string, FieldBase*> {
 protected:
-   /// The offset into the file where this collection of fields starts
-   size_t file_offset_ = 0;
+   size_t file_offset_ = 0;  ///< The offset into the file where this collection of fields starts
 
 public:
-   /// Set the offset into the file where this collection of fields starts
-   ///
-   /// @param new_offset The offset into the file where this collection of fields starts
-   virtual void set_file_offset( size_t new_offset ) {
-      file_offset_ = new_offset;
-   }
-
-   /// @return The offset into the file where this collection of fields starts
-   virtual size_t get_file_offset() {
-      return file_offset_;
-   }
-
-   /// Validate each of the fields in this Map
-   ///
-   /// @return `true` if everything is valid.  `false` if there's a problem.
+   /// Validate each of the fields in this Map (generic)
    virtual bool validate() const {
       for (const auto& [label, field] : *this ) {
          if( !field->validate() ) {
@@ -197,7 +158,7 @@ public:
 
       // There's nothing to validate for file_offset_
 
-      return true;
+      return true;  /// @return `true` if everything is valid.  `false` if there's a problem.
    }
 
    /// Parse data out of PEFile to populate the Fields
@@ -209,7 +170,7 @@ public:
       }
    }
 
-   /// Print this FieldMap
+   /// Print this FieldMap (generic)
    virtual void print() const {
       for (const auto& [label, field] : *this ) {
          string valueAsString = field->get_value();
@@ -232,13 +193,11 @@ public:
 /// A DOS-specific FieldMap
 ///
 /// @see offset reference http://www.sunshine2k.de/reversing/tuts/tut_pe.htm
-class DOSFieldMap : public FieldMap {
+class DOS_FieldMap : public FieldMap {
 public:
-   /// Create a new DOSFieldMAp at `new_file_offset`
-   ///
-   /// @param new_file_offset The offset into the file for this collection of fields
-   DOSFieldMap( const size_t new_file_offset ) {
-      file_offset_ = new_file_offset;
+   /// Create a new DOS_FieldMap
+   DOS_FieldMap() {
+      file_offset_ = 0;
 
       this->insert( { "01_dos_e_magic",    new Field<uint16_t>( 0x00, "Magic number"                , AS_HEX | AS_CHAR ) } );
       this->insert( { "02_dos_e_cblp",     new Field<uint16_t>( 0x02, "Bytes in last page"          , AS_DEC           ) } );
@@ -257,16 +216,15 @@ public:
       this->insert( { "15_dos_e_oeminfo",  new Field<uint16_t>( 0x26, "OEM information"             , AS_DEC           ) } );
       this->insert( { "16_dos_e_lfanew",   new Field<uint32_t>( 0x3C, "PE header offset"            , AS_HEX           ) } );
    }
+
    /// @return The file offset to the COFF section
    uint32_t get_exe_header_offset() {
       return dynamic_cast<Field<uint32_t>*>(this->at( "16_dos_e_lfanew" ))->value_;
    }
 
-   /// @return `true` if the DOSFieldMap is valid
+   /// @return `true` if the DOS_FieldMap is valid
    virtual bool validate() const {
-      if( !FieldMap::validate() ) {
-         return false;
-      }
+      if( !FieldMap::validate() ) { return false; }
 
       if( this->at("01_dos_e_magic")->get_value() != "0x5a4d (MZ)" ) { // Validate the magic is "MZ"
          return false;
@@ -275,7 +233,7 @@ public:
       return true ;
    }
 
-   /// Print the DOSFieldMap
+   /// Print the DOS_FieldMap
    virtual void print() const {
       cout << "DOS Header" << endl;
       FieldMap::print();
@@ -340,8 +298,6 @@ protected:
    size_t       file_size_;  ///< The size of the PE file
    vector<char> buffer_;     ///< The contents of the PE file
 
-   DOSFieldMap dos_field_map_ {0};  ///< The collection of DOS Fields
-
 public:
    /// Read the PEFile at `new_file_path`
    ///
@@ -363,6 +319,8 @@ public:
 
    /// Print the headers and sections of this PE File
    virtual void print() {
+      DOS_FieldMap dos_field_map_;
+
       dos_field_map_.parse( buffer_ );
       if( !dos_field_map_.validate() ) {
          cout << "The DOS header is invalid" << endl;
@@ -385,11 +343,8 @@ public:
 
 
 /// Main entry point for readpe
-
-/// @param argc The number of arguments
-/// @param argv An array of arguments as strings
-/// @return The result code for this program
-int main( int argc, char* argv[] ) {
+int main( int argc,         ///< The number of arguments
+          char* argv[] ) {  ///< An array of arguments as strings
     if( argc <= 1 ) {
        cout << "Usage:  readpe PEfile" << endl;
     }
@@ -398,5 +353,5 @@ int main( int argc, char* argv[] ) {
     PEFile pe_file( argv[1] );
     pe_file.print();
 
-    return 0;
+    return 0;  /// @return The result code for this program
 }
