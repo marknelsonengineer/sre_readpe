@@ -34,6 +34,11 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 
 /// FieldBase is an any-type base class for Field.
 class FieldBase {
+protected:
+   size_t offset_;      ///< The offset into a section to find this Field
+   string description_; ///< A description of this Field
+   Rules  rules_;       ///< Encode special processing rules for this Field
+
 public:
    /// Constructor that takes a label, offset and description.
    ///
@@ -84,11 +89,6 @@ public:
    /// @param file_buffer The contents of the PE File
    /// @param file_offset The file offset to this group of fields (not necessarily this particular field)
    virtual void set_value( vector<char>& file_buffer, size_t file_offset ) = 0;
-
-protected:
-   size_t      offset_;      ///< The offset into a section to find this Field
-   string description_; ///< A description of this Field
-   Rules       rules_;       ///< Encode special processing rules for this Field
 };
 
 
@@ -97,6 +97,9 @@ template <typename T>
 class Field : public FieldBase {
    friend DOSFieldMap;     ///< DOSFieldMap needs to directly access `field_` for validation
    friend COFF_FieldMap;   ///< COFF_FieldMap needs to directly access `field_` for validation
+
+protected:
+   T value_;  ///< The value of this Field
 
 public:
    /// Constructor that takes an offset, description and rules.
@@ -158,14 +161,15 @@ public:
    virtual const char* get_type() const override {
       return typeid(T).name();
    }
-
-protected:
-   T value_;  ///< The value of this Field
 };
 
 
 /// A Map of Field objects
 class FieldMap : public map<string, FieldBase*> {
+protected:
+   /// The offset into the file where this collection of fields starts
+   size_t file_offset_ = 0;
+
 public:
    /// Set the offset into the file where this collection of fields starts
    ///
@@ -222,10 +226,6 @@ public:
                    << endl ;
       }
    }
-
-protected:
-   /// The offset into the file where this collection of fields starts
-   size_t file_offset_ = 0;
 };
 
 
@@ -335,6 +335,13 @@ public:
 
 /// This class represents a PEFile
 class PEFile {
+protected:
+   string       file_path_;  ///< The name of the PE file
+   size_t       file_size_;  ///< The size of the PE file
+   vector<char> buffer_;     ///< The contents of the PE file
+
+   DOSFieldMap dos_field_map_ {0};  ///< The collection of DOS Fields
+
 public:
    /// Read the PEFile at `new_file_path`
    ///
@@ -374,13 +381,6 @@ public:
       }
       coff_header_map.print();
    }
-
-protected:
-   string file_path_;     ///< The name of the PE file
-   size_t file_size_;          ///< The size of the PE file
-   vector<char> buffer_;  ///< The contents of the PE file
-
-   DOSFieldMap dos_field_map_ {0};  ///< The collection of DOS Fields
 };
 
 
