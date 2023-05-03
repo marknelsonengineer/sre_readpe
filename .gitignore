@@ -1,0 +1,40 @@
+###############################################################################
+###               University of Hawaii, College of Engineering
+###               Lab 6 - ReadPE - SRE - Spring 2023
+###
+### Tells git which files to ignore
+###
+### @see https://git-scm.com/docs/gitignore
+###
+### @file    .gitignore
+### @author  Thanh Ly < thanhly@hawaii.edu>
+### @author  Mark Nelson marknels@hawaii.edu>
+###############################################################################
+
+# Compiled Object files
+*.o
+*.obj
+
+# Docs & Manuals
+docs/
+
+# VSCODE
+.vscode/
+
+# Backup file
+bak/
+
+# Prototype
+Prototype/
+
+# Ignore a hidden file for MacOS filesystems
+.DS_Store
+
+# Ignore executable files
+*.exe
+*.out
+*.app
+readpe
+
+# Ignore CLion files
+.idea/
