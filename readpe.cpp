@@ -29,9 +29,7 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 #define AS_DEC    0x01  ///< Print the value as a decimal number
 #define AS_HEX    0x02  ///< Print the value as a hexadecimal number
 #define AS_CHAR   0x04  ///< Print as a fixed-width character array
-#define AS_STRING 0x08  ///< As a null-terminated string
-#define COPY_RAW  0x10  ///< Do not do any endian-ness swapping
-#define WITH_TIME 0x20  ///< Print with timestamp
+#define WITH_TIME 0x08  ///< Print with timestamp
 
 
 /// FieldBase is an any-type base class for Field.
@@ -86,9 +84,6 @@ public:
    /// @param file_buffer The contents of the PE File
    /// @param file_offset The file offset to this group of fields (not necessarily this particular field)
    virtual void set_value( vector<char>& file_buffer, size_t file_offset ) = 0;
-
-   /// @return A one-line description of this Field
-   virtual string info() const = 0;
 
 protected:
    size_t      offset_;      ///< The offset into a section to find this Field
@@ -164,24 +159,6 @@ public:
       return typeid(T).name();
    }
 
-   /// @return A one-line description of the contents of this object
-   virtual string info() const override {
-      string infoString {};
-
-      infoString += "The ";
-      infoString += description_;
-      infoString += " stored as a ";
-      infoString += to_string( sizeof( value_ ) );
-      infoString += " byte ";
-      infoString += boost::core::demangled_name( BOOST_CORE_TYPEID( *this ));
-      infoString += " at offset ";
-      infoString += to_string( offset_ );
-      infoString += " has a value of ";
-      infoString += get_value();
-
-      return infoString;
-   }
-
 protected:
    T value_;  ///< The value of this Field
 };
@@ -217,15 +194,6 @@ public:
       // There's nothing to validate for file_offset_
 
       return true;
-   }
-
-   /// Print some information about this FieldMap
-   virtual void info() const {
-      cout << "This FieldMap has " << this->size() << " fields ";
-      cout << "and as a file offset of " << file_offset_ << " bytes " << endl;
-      for (const auto& [label, field] : *this ) {
-         cout << field->info() << endl ;
-      }
    }
 
    /// Parse data out of PEFile to populate the Fields
