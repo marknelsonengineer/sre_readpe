@@ -21,7 +21,7 @@
 
 using namespace std;
 
-class DOS_FieldMap;    // Forward declaration
+class DOS_FieldMap;   // Forward declaration
 class COFF_FieldMap;  // Forward declaration
 
 typedef uint8_t Rules;  ///< The base-type of our rules flag.
@@ -30,7 +30,24 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 #define AS_HEX    0x02  ///< Print the value as a hexadecimal number
 #define AS_CHAR   0x04  ///< Print as a fixed-width character array
 #define WITH_TIME 0x08  ///< Print with timestamp
+#define WITH_FLAG 0x10  ///< Decode a single flag
 
+map<pair<string, uint32_t>, string> flags {
+        { pair( "02_coff_machine", 0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN" }
+       ,{ pair( "02_coff_machine", 0x8664 ), "IMAGE_FILE_MACHINE_AMD64"   }
+       ,{ pair( "02_coff_machine", 0x014c ), "IMAGE_FILE_MACHINE_I386"    }
+       ,{ pair( "02_coff_machine", 0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"   }
+       ,{ pair( "02_coff_machine", 0x0200 ), "IMAGE_FILE_MACHINE_IA64"    }
+};
+
+void print_characteristics( string label, uint32_t flags ) {
+   for( uint8_t i = 0 ; i < 32 ; i++ ) {
+      uint32_t mask = 1 << i;
+      if( flags | mask ) {
+         // Get the thing.
+      }
+   }
+}
 
 /// FieldBase is an any-type base class for Field.
 class FieldBase {
@@ -130,6 +147,14 @@ public:
          tm tm = *gmtime(&t);
          resultString << put_time(&tm, "%c %Z");
          resultString << ")";
+      }
+
+      if( rules_ & WITH_FLAG ) {
+         try {
+            resultString << " " << flags.at( pair( "02_coff_machine", value_) );
+         } catch( const out_of_range& ) {
+            resultString << "UNKNOWN FLAG MAPPING";
+         }
       }
 
       return resultString.str();
@@ -256,7 +281,7 @@ public:
       file_offset_ = new_file_offset;
 
       this->insert( { "01_coff_signature",            new Field<uint32_t>( 0x00, "coff_signature"          , 0 ) } );
-      this->insert( { "02_coff_machine",              new Field<uint16_t>( 0x04, "Machine"                 , AS_HEX ) } );
+      this->insert( { "02_coff_machine",              new Field<uint16_t>( 0x04, "Machine"                 , AS_HEX | WITH_FLAG ) } );
       this->insert( { "03_coff_sections",             new Field<uint16_t>( 0x06, "Number of Sections"      , AS_DEC ) } );
       this->insert( { "04_coff_timedatestamp",        new Field<uint32_t>( 0x08, "Date/time stamp"         , AS_DEC | WITH_TIME ) } );
       this->insert( { "05_coff_PointerToSymbolTable", new Field<uint32_t>( 0x0C, "Symbol Table offset"     , AS_DEC ) } );
