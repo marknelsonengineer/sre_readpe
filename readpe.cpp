@@ -44,9 +44,9 @@ public:
    FieldBase(const size_t     new_offset       ///< The offset into the file's section to the start of the value stored in the file
             ,const string     new_description  ///< The description of this Field
             ,const Rules      new_rules )      ///< Encode special processing rules for this Field
-            :offset_      ( new_offset )                                      // Member initialization
-            ,description_ { boost::algorithm::trim_copy( new_description ) }  // List initialization
-            ,rules_       ( new_rules )                                       // Member initialization
+            :offset_      ( new_offset )       // Member initialization
+            ,description_ ( new_description )  // Member initialization
+            ,rules_       ( new_rules )        // Member initialization
    {}
 
 
@@ -264,12 +264,15 @@ public:
    uint32_t get_section_table_offset() {
       // The first section starts immediately after the optional header...
       // So, it's at: file_offset_ + 18 (size of the COFF header) + coff_SizeOfOptionalHeader
-      return file_offset_ + 0x18 + dynamic_cast<Field<uint32_t>*>(this->at( "07_coff_SizeOfOptionalHeader" ))->value_;
+      return file_offset_ + 0x18 + dynamic_cast<Field<uint16_t>*>(this->at( "07_coff_SizeOfOptionalHeader" ))->value_;
    }
 
-   /// @todo Probably also need to implement a get_number_of_sections() method
+   /// @return The number of sections in this PE file
+   uint16_t get_number_of_sections() {
+      return dynamic_cast<Field<uint16_t>*>(this->at( "03_coff_sections" ))->value_;
+   }
 
-   /// @return `true` if the COFF_FieldMap is valid
+   /// @return `true` if the COFF_FieldMap is healthy
    virtual bool validate() const {
       if( !FieldMap::validate() ) {
          return false;
@@ -286,6 +289,32 @@ public:
    /// Print the COFF_FieldMap
    virtual void print() const {
       cout << "COFF/File header" << endl;
+      FieldMap::print();
+   }
+};
+
+
+/// A Section-specific FieldMap
+class Section_FieldMap : public FieldMap {
+public:
+   /// Create a new Section_FieldMAp at `new_file_offset`
+   ///
+   /// @param new_file_offset The offset into the file for this collection of fields
+   Section_FieldMap( const size_t new_file_offset ) {
+      file_offset_ = new_file_offset;
+
+      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR ) } );
+      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_HEX  ) } );
+      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX  ) } );
+      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_HEX  ) } );
+      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX  ) } );
+      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX  ) } );
+      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX  ) } );
+   }
+
+   /// Print the Section_FieldMap
+   virtual void print() const {
+      cout << "    Section" << endl;
       FieldMap::print();
    }
 };
@@ -338,6 +367,17 @@ public:
          exit( 1 );
       }
       coff_header_map.print();
+
+      std::vector<Section_FieldMap*> sections;
+      cout << "Sections" << endl;
+
+      for( size_t i = 0 ; i < coff_header_map.get_number_of_sections() ; i++ ) {
+         Section_FieldMap* newSection = new Section_FieldMap { coff_header_map.get_section_table_offset() + (i * 0x28) };
+         newSection->parse( buffer_ );
+         newSection->print();
+         //sections.push_back( newSection );
+         cout << endl;
+      }
    }
 };
 
