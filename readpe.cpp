@@ -34,21 +34,6 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 #define WITH_TIME 0x20  ///< Print with timestamp
 
 
-/// Print `=====================`... across the screen
-#define PRINT_HEADING_FOR_DUMP cout << setw(80) << setfill( '=' ) << "" << endl
-
-
-/// Format a line for dumping the members of a class to the console.
-/// Setup the fields for printing (space pad, left justify, etc.)
-#define FORMAT_LINE_FOR_DUMP( className, member )         \
-    cout << setfill( ' ' )  /* Space pad    */  \
-              << left            /* Left justify */  \
-              << boolalpha  /* Print `true` or `false` for `bool`s */ \
-              << setw(20) << (className)             \
-              << setw(20) << (member)                \
-              << setw(40)  /* (data) */
-
-
 /// FieldBase is an any-type base class for Field.
 class FieldBase {
 public:
@@ -57,12 +42,12 @@ public:
    /// @param new_offset      The offset into the file's section to the start of the value stored in the file
    /// @param new_description The description of this Field
    /// @param new_rules       Encode special processing rules for this Field
-   FieldBase(const size_t      new_offset
-           ,const string new_description
-           ,const Rules       new_rules ) :
-            offset_      ( new_offset )                                      // Member initialization
-           ,description_ { boost::algorithm::trim_copy( new_description ) }  // List initialization
-           ,rules_       ( new_rules )                                       // Member initialization
+   FieldBase(const size_t     new_offset
+            ,const string     new_description
+            ,const Rules      new_rules )
+            :offset_      ( new_offset )                                      // Member initialization
+            ,description_ { boost::algorithm::trim_copy( new_description ) }  // List initialization
+            ,rules_       ( new_rules )                                       // Member initialization
    {}
 
    /// @return The offset to this Field (relative to the start of this group of fields)
@@ -89,14 +74,6 @@ public:
       }
 
       return true;
-   }
-
-   /// Dump the contents of this object
-   virtual void dump() const {
-      PRINT_HEADING_FOR_DUMP ;
-
-      FORMAT_LINE_FOR_DUMP( "FieldBase", "offset_" ) << get_offset() << endl ;
-      FORMAT_LINE_FOR_DUMP( "FieldBase", "description_" ) << get_description() << endl ;
    }
 
    /// We don't really want the value, what we really want is the string version of the value...
@@ -138,10 +115,6 @@ public:
    ) : FieldBase( new_offset, new_description, new_rules )
            ,value_       { T() }
    {}
-   //TODO: implement copy constructor
-   //      implement assignment operator
-   //      ~Field(); // destructor
-   //
 
    /// @return The current value of the Field (as a string).
    string get_value() const override {
@@ -189,11 +162,6 @@ public:
    /// @return Get the type of this Field (as a string)
    virtual const char* get_type() const override {
       return typeid(T).name();
-   }
-
-   virtual void dump() const override {
-      FieldBase::dump();
-      FORMAT_LINE_FOR_DUMP( "Field", "value_" ) << get_value() << endl ;
    }
 
    /// @return A one-line description of the contents of this object
@@ -257,20 +225,6 @@ public:
       cout << "and as a file offset of " << file_offset_ << " bytes " << endl;
       for (const auto& [label, field] : *this ) {
          cout << field->info() << endl ;
-      }
-   }
-
-   /// Dump the contents of this FieldMap
-   virtual void dump() const {
-      PRINT_HEADING_FOR_DUMP ;
-      PRINT_HEADING_FOR_DUMP ;
-
-      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << endl ;
-      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this << endl ;
-      FORMAT_LINE_FOR_DUMP( "FieldMap", "size" ) << size() << endl ;
-
-      for (const auto& [label, field] : *this ) {
-         field->dump();
       }
    }
 
@@ -432,28 +386,11 @@ public:
       file.close();
    }
 
-   /// Dump the contents of the ReadPE file
-   virtual void dump() const {
-      PRINT_HEADING_FOR_DUMP ;
-      PRINT_HEADING_FOR_DUMP ;
-      PRINT_HEADING_FOR_DUMP ;
-
-      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << endl ;
-      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this  << endl ;
-      FORMAT_LINE_FOR_DUMP( "PEFile", "file_path_" ) << file_path_ << endl ;
-      FORMAT_LINE_FOR_DUMP( "PEFile", "file_size_" ) << file_size_ << endl ;
-
-      // We won't dump buffer_
-
-      dos_field_map_.dump();
-   }
-
    /// Print the headers and sections of this PE File
    virtual void print() {
       dos_field_map_.parse( buffer_ );
       if( !dos_field_map_.validate() ) {
          cout << "The DOS header is invalid" << endl;
-         dos_field_map_.dump();
          exit( 1 );
       }
       dos_field_map_.print();
@@ -465,7 +402,6 @@ public:
       coff_header_map.parse( buffer_ );
       if( !coff_header_map.validate() ) {
          cout << "The COFF header is invalid" << endl;
-         coff_header_map.dump();
          exit( 1 );
       }
       coff_header_map.print();
