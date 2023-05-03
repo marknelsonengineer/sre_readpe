@@ -11,8 +11,8 @@
 ### @author  Mark Nelson marknels@hawaii.edu>
 ###############################################################################
 
-CC           = g++
-CFLAGS       = -Wall -Wextra $(DEBUG_CFLAGS) -std=c++17
+CC     = g++
+CFLAGS = -Wall -Wextra $(DEBUG_CFLAGS) -std=c++17 -g -O0
 
 SRCS = readpe.cpp
 
@@ -25,7 +25,7 @@ all: $(MAIN)
 $(MAIN): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(MAIN)
 
-%.o: %.cpp %.h
+%.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 doc: $(TARGET)
