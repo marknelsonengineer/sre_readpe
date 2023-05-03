@@ -43,27 +43,16 @@ map<pair<string, uint32_t>, string> flags {
         ,{ pair( "08_coff_characteristics", 0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"    }
         ,{ pair( "08_coff_characteristics", 0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE"    }
         ,{ pair( "08_coff_characteristics", 0x0100 ), "IMAGE_FILE_32BIT_MACHINE"    }
+        ,{ pair( "07_section_characteristics", 0x00000020 ), "IMAGE_SCN_CNT_CODE"    }
+        ,{ pair( "07_section_characteristics", 0x00000040 ), "IMAGE_SCN_CNT_INITIALIZED_DATA"    }
+        ,{ pair( "07_section_characteristics", 0x02000000 ), "IMAGE_SCN_MEM_DISCARDABLE"    }
+        ,{ pair( "07_section_characteristics", 0x04000000 ), "IMAGE_SCN_MEM_NOT_CACHED"    }
+        ,{ pair( "07_section_characteristics", 0x08000000 ), "IMAGE_SCN_MEM_NOT_PAGED"    }
+        ,{ pair( "07_section_characteristics", 0x10000000 ), "IMAGE_SCN_MEM_SHARED"    }
+        ,{ pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"    }
+        ,{ pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"    }
+        ,{ pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"    }
 };
-
-void print_characteristics(   ///< Print the characteristics
-        string label          ///< The field to search in the #flags map
-       ,uint32_t characteristics ) { ///< The characteristics to search for in the #flags map
-   cout << "    Characteristics names" << endl;
-
-   for( uint8_t i = 0 ; i < 32 ; i++ ) {
-      uint32_t mask = 1 << i;
-      if( characteristics & mask ) {
-         cout << std::setw(42) << std::setfill( ' ' ) << "";
-
-         try {
-            cout << flags.at( pair( label, mask ) );
-         } catch( const out_of_range& ) {
-            cout << "UNKNOWN FLAG MAPPING: " << hex << "0x" << mask;
-         }
-         cout << endl;
-      }
-   }
-}
 
 /// FieldBase is an any-type base class for Field.
 class FieldBase {
@@ -110,6 +99,10 @@ public:
    virtual void set_value(
            vector<char>& file_buffer  ///< The contents of the PE File
           ,size_t file_offset ) = 0;  ///< The file offset to this group of fields (not necessarily this particular field)
+
+   virtual void print_characteristics(      ///< Print the characteristics flags
+           const string label ) const = 0;  ///< The field to search in the #flags map
+
 };
 
 
@@ -186,7 +179,26 @@ public:
           ) override {
       memcpy(&value_, &file_buffer[file_offset + offset_], sizeof(value_));
    }
-};
+
+   virtual void print_characteristics(             ///< Print the characteristics flags
+            const string label ) const override {  ///< The field to search in the #flags map
+      cout << "    Characteristics names" << endl;
+
+      for( uint8_t i = 0 ; i < sizeof( T )*8 ; i++ ) {
+         T mask = 1 << i;
+         if( value_ & mask ) {
+            cout << std::setw(42) << std::setfill( ' ' ) << "";
+
+            try {
+               cout << flags.at( pair( label, mask ) );
+            } catch( const out_of_range& ) {
+               cout << "UNKNOWN FLAG MAPPING: " << hex << "0x" << mask;
+            }
+            cout << endl;
+         }
+      }
+   }
+}; // Field
 
 
 /// A generic Map of Field objects
@@ -236,7 +248,7 @@ public:
                    << endl ;
 
          if( field->get_rules() & WITH_FLAGS ) {
-            print_characteristics( label, 0x22 );  /// @todo FIX THIS HARDCODE!!
+            field->print_characteristics( label );
          }
       }
    }
@@ -356,13 +368,13 @@ public:
    Section_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
-      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR          ) } );
-      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_DEC | AS_HEX  ) } );
-      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX           ) } );
-      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_DEC | AS_HEX  ) } );
-      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX           ) } );
-      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX           ) } );
-      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX           ) } );
+      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR             ) } );
+      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_DEC | AS_HEX     ) } );
+      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX              ) } );
+      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_DEC | AS_HEX     ) } );
+      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX              ) } );
+      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX              ) } );
+      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX | WITH_FLAGS ) } );
    }
 
    /// Print the Section_FieldMap
