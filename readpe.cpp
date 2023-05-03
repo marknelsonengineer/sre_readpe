@@ -19,6 +19,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/core/typeinfo.hpp>  // For boost::core::demangle()
 
+using namespace std;
 
 class DOSFieldMap;    // Forward declaration
 class COFF_FieldMap;  // Forward declaration
@@ -38,18 +39,18 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 /// Print =====================
 #define PRINT_HEADING_FOR_DUMP                                                \
     /* Print =========================================================== */   \
-    std::cout << std::setw(80) << std::setfill( '=' ) << "" << std::endl
+    cout << setw(80) << setfill( '=' ) << "" << endl
 
 
 /// Format a line for dumping the members of a class to the console.
 /// Setup the fields for printing (space pad, left justify, etc.)
 #define FORMAT_LINE_FOR_DUMP( className, member )         \
-    std::cout << std::setfill( ' ' )  /* Space pad    */  \
-              << std::left            /* Left justify */  \
-              << std::boolalpha  /* Print `true` or `false` for `bool`s */ \
-              << std::setw(20) << (className)             \
-              << std::setw(20) << (member)                \
-              << std::setw(40)  /* (data) */
+    cout << setfill( ' ' )  /* Space pad    */  \
+              << left            /* Left justify */  \
+              << boolalpha  /* Print `true` or `false` for `bool`s */ \
+              << setw(20) << (className)             \
+              << setw(20) << (member)                \
+              << setw(40)  /* (data) */
 
 
 /// FieldBase is an any-type base class for Field.
@@ -61,7 +62,7 @@ public:
    /// @param new_description The description of this Field
    /// @param new_rules       Encode special processing rules for this Field
    FieldBase(const size_t      new_offset
-           ,const std::string new_description
+           ,const string new_description
            ,const Rules       new_rules ) :
            offset_      ( new_offset )                                        // Member initialization
            ,description_ { boost::algorithm::trim_copy( new_description ) }    // List initialization
@@ -74,7 +75,7 @@ public:
    }
 
    /// @return The description for this Field
-   virtual std::string get_description() const {
+   virtual string get_description() const {
       return description_;
    }
 
@@ -98,27 +99,27 @@ public:
    virtual void dump() const {
       PRINT_HEADING_FOR_DUMP ;
 
-      FORMAT_LINE_FOR_DUMP( "FieldBase", "offset_" ) << get_offset() << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "FieldBase", "description_" ) << get_description() << std::endl ;
+      FORMAT_LINE_FOR_DUMP( "FieldBase", "offset_" ) << get_offset() << endl ;
+      FORMAT_LINE_FOR_DUMP( "FieldBase", "description_" ) << get_description() << endl ;
    }
 
    /// We don't really want the value, what we really want is the string version of the value...
    ///
    /// @return The value of the Field (as a string)
-   virtual std::string get_value() const = 0;
+   virtual string get_value() const = 0;
 
    /// Read the PE File and set the Field value
    ///
    /// @param file_buffer The contents of the PE File
    /// @param file_offset The file offset to this group of fields (not necessarily this particular field)
-   virtual void set_value( std::vector<char>& file_buffer, size_t file_offset ) = 0;
+   virtual void set_value( vector<char>& file_buffer, size_t file_offset ) = 0;
 
    /// @return A one-line description of this Field
-   virtual std::string info() const = 0;
+   virtual string info() const = 0;
 
 protected:
    size_t      offset_;      ///< The offset into a section to find this Field
-   std::string description_; ///< A description of this Field
+   string description_; ///< A description of this Field
    Rules       rules_;       ///< Encode special processing rules for this Field
 };
 
@@ -136,7 +137,7 @@ public:
    /// @param new_description The description of this Field
    /// @param new_rules       The decorator rules for this Field
    Field(   const size_t      new_offset
-           ,const std::string new_description
+           ,const string new_description
            ,const Rules       new_rules
    ) : FieldBase( new_offset, new_description, new_rules )
            ,value_       { T() }
@@ -147,18 +148,18 @@ public:
    //
 
    /// @return The current value of the Field (as a string).
-   std::string get_value() const override {
-      std::stringstream resultString;
+   string get_value() const override {
+      stringstream resultString;
 
       if( rules_ & AS_DEC ) {
-         resultString << std::dec << value_ << " ";
+         resultString << dec << value_ << " ";
       }
 
       if( rules_ & AS_HEX ) {
          if( value_ == 0 ) {
             resultString << 0 << " ";
          } else {
-            resultString << "0x" << std::hex << value_ << " ";
+            resultString << "0x" << hex << value_ << " ";
          }
       }
 
@@ -172,9 +173,9 @@ public:
 
       if( rules_ & WITH_TIME ) {
          resultString << "(";
-         std::time_t t = value_;
-         std::tm tm = *std::gmtime(&t);
-         resultString << std::put_time(&tm, "%c %Z");
+         time_t t = value_;
+         tm tm = *gmtime(&t);
+         resultString << put_time(&tm, "%c %Z");
          resultString << ")";
       }
 
@@ -185,8 +186,8 @@ public:
    ///
    /// @param file_buffer The contents of the PE File
    /// @param file_offset The offset to this header in the file
-   virtual void set_value( std::vector<char>& file_buffer, size_t file_offset ) override {
-      std::memcpy(&value_, &file_buffer[file_offset + offset_], sizeof(value_));
+   virtual void set_value( vector<char>& file_buffer, size_t file_offset ) override {
+      memcpy(&value_, &file_buffer[file_offset + offset_], sizeof(value_));
    }
 
    /// @return Get the type of this Field (as a string)
@@ -196,21 +197,21 @@ public:
 
    virtual void dump() const override {
       FieldBase::dump();
-      FORMAT_LINE_FOR_DUMP( "Field", "value_" ) << get_value() << std::endl ;
+      FORMAT_LINE_FOR_DUMP( "Field", "value_" ) << get_value() << endl ;
    }
 
    /// @return A one-line description of the contents of this object
-   virtual std::string info() const override {
-      std::string infoString {};
+   virtual string info() const override {
+      string infoString {};
 
       infoString += "The ";
       infoString += description_;
       infoString += " stored as a ";
-      infoString += std::to_string( sizeof( value_ ) );
+      infoString += to_string( sizeof( value_ ) );
       infoString += " byte ";
       infoString += boost::core::demangled_name( BOOST_CORE_TYPEID( *this ));
       infoString += " at offset ";
-      infoString += std::to_string( offset_ );
+      infoString += to_string( offset_ );
       infoString += " has a value of ";
       infoString += get_value();
 
@@ -223,7 +224,7 @@ protected:
 
 
 /// A Map of Field objects
-class FieldMap : public std::map<std::string, FieldBase*> {
+class FieldMap : public map<string, FieldBase*> {
 public:
    /// Set the offset into the file where this collection of fields starts
    ///
@@ -256,10 +257,10 @@ public:
 
    /// Print some information about this FieldMap
    virtual void info() const {
-      std::cout << "This FieldMap has " << this->size() << " fields ";
-      std::cout << "and as a file offset of " << file_offset_ << " bytes " << std::endl;
+      cout << "This FieldMap has " << this->size() << " fields ";
+      cout << "and as a file offset of " << file_offset_ << " bytes " << endl;
       for (const auto& [label, field] : *this ) {
-         std::cout << field->info() << std::endl ;
+         cout << field->info() << endl ;
       }
    }
 
@@ -268,9 +269,9 @@ public:
       PRINT_HEADING_FOR_DUMP ;
       PRINT_HEADING_FOR_DUMP ;
 
-      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "FieldMap", "size" ) << size() << std::endl ;
+      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << endl ;
+      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this << endl ;
+      FORMAT_LINE_FOR_DUMP( "FieldMap", "size" ) << size() << endl ;
 
       for (const auto& [label, field] : *this ) {
          field->dump();
@@ -280,7 +281,7 @@ public:
    /// Parse data out of PEFile to populate the Fields
    ///
    /// @param file_buffer A reference to the file's contents
-   virtual void parse( std::vector<char>& file_buffer ) {
+   virtual void parse( vector<char>& file_buffer ) {
       for (const auto& [label, field] : *this ) {
          field->set_value( file_buffer, file_offset_ );
       }
@@ -289,18 +290,18 @@ public:
    /// Print this FieldMap
    virtual void print() const {
       for (const auto& [label, field] : *this ) {
-         std::string valueAsString = field->get_value();
+         string valueAsString = field->get_value();
 
          if( valueAsString.empty() ) {  // If it's empty, then skip it
             continue;                   // We may need to bring in a field
          }                              // for validation that we don't want to print
 
-         std::cout << "    "
-                   << std::setfill( ' ' )  /* Space pad    */
-                   << std::left            /* Left justify */
-                   << std::setw(34) << field->get_description() + ":"
+         cout << "    "
+                   << setfill( ' ' )  /* Space pad    */
+                   << left            /* Left justify */
+                   << setw(34) << field->get_description() + ":"
                    << field->get_value()
-                   << std::endl ;
+                   << endl ;
       }
    }
 
@@ -358,7 +359,7 @@ public:
 
    /// Print the DOSFieldMap
    virtual void print() const {
-      std::cout << "DOS Header" << std::endl;
+      cout << "DOS Header" << endl;
       FieldMap::print();
    }
 };
@@ -408,7 +409,7 @@ public:
 
    /// Print the COFF_FieldMap
    virtual void print() const {
-      std::cout << "COFF/File header" << std::endl;
+      cout << "COFF/File header" << endl;
       FieldMap::print();
    }
 };
@@ -420,15 +421,15 @@ public:
    /// Read the PEFile at `new_file_path`
    ///
    /// @param new_file_path The name of the PE file to process
-   PEFile(const std::string& new_file_path) : file_path_(new_file_path) {
-      std::ifstream file(file_path_, std::ios::binary); //TODO: This is not working
+   PEFile(const string& new_file_path) : file_path_(new_file_path) {
+      ifstream file(file_path_, ios::binary); //TODO: This is not working
       if (!file.is_open()) {
-         throw std::runtime_error("Failed to open the file: " + file_path_);
+         throw runtime_error("Failed to open the file: " + file_path_);
       }
 
-      file.seekg(0, std::ios::end);
+      file.seekg(0, ios::end);
       file_size_ = file.tellg();
-      file.seekg(0, std::ios::beg);
+      file.seekg(0, ios::beg);
 
       buffer_.resize(file_size_);
       file.read(buffer_.data(), file_size_);
@@ -441,10 +442,10 @@ public:
       PRINT_HEADING_FOR_DUMP ;
       PRINT_HEADING_FOR_DUMP ;
 
-      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this  << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "PEFile", "file_path_" ) << file_path_ << std::endl ;
-      FORMAT_LINE_FOR_DUMP( "PEFile", "file_size_" ) << file_size_ << std::endl ;
+      FORMAT_LINE_FOR_DUMP( "Object", "class" )  << boost::core::demangled_name( BOOST_CORE_TYPEID( *this )) << endl ;
+      FORMAT_LINE_FOR_DUMP( "Object", "this" )  << this  << endl ;
+      FORMAT_LINE_FOR_DUMP( "PEFile", "file_path_" ) << file_path_ << endl ;
+      FORMAT_LINE_FOR_DUMP( "PEFile", "file_size_" ) << file_size_ << endl ;
 
       // We won't dump buffer_
 
@@ -455,9 +456,9 @@ public:
    virtual void print() {
       dos_field_map_.parse( buffer_ );
       if( !dos_field_map_.validate() ) {
-         std::cout << "The DOS header is invalid" << std::endl;
+         cout << "The DOS header is invalid" << endl;
          dos_field_map_.dump();
-         std::exit( 1 );
+         exit( 1 );
       }
       dos_field_map_.print();
 
@@ -467,24 +468,21 @@ public:
       COFF_FieldMap coff_header_map { coff_offset };
       coff_header_map.parse( buffer_ );
       if( !coff_header_map.validate() ) {
-         std::cout << "The COFF header is invalid" << std::endl;
+         cout << "The COFF header is invalid" << endl;
          coff_header_map.dump();
-         std::exit( 1 );
+         exit( 1 );
       }
       coff_header_map.print();
    }
 
 protected:
-   std::string file_path_;     ///< The name of the PE file
+   string file_path_;     ///< The name of the PE file
    size_t file_size_;          ///< The size of the PE file
-   std::vector<char> buffer_;  ///< The contents of the PE file
+   vector<char> buffer_;  ///< The contents of the PE file
 
    DOSFieldMap dos_field_map_ {0};  ///< The collection of DOS Fields
 };
 
-
-
-using namespace std;
 
 int main( int argc, char* argv[] ) {
     if( argc <= 1 ) {
