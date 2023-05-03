@@ -16,7 +16,7 @@
 #include <iomanip>   // For setfill()
 #include <string>    // For string
 
-#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/trim.hpp>  // For boost::algorithm::trim_copy()
 #include <boost/core/typeinfo.hpp>  // For boost::core::demangle()
 
 using namespace std;
@@ -60,9 +60,9 @@ public:
    FieldBase(const size_t      new_offset
            ,const string new_description
            ,const Rules       new_rules ) :
-           offset_      ( new_offset )                                        // Member initialization
-           ,description_ { boost::algorithm::trim_copy( new_description ) }    // List initialization
-           ,rules_       ( new_rules )                                         // Member initialization
+            offset_      ( new_offset )                                      // Member initialization
+           ,description_ { boost::algorithm::trim_copy( new_description ) }  // List initialization
+           ,rules_       ( new_rules )                                       // Member initialization
    {}
 
    /// @return The offset to this Field (relative to the start of this group of fields)
