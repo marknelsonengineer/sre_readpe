@@ -99,24 +99,29 @@ public:
    string get_value() const override {
       stringstream resultString;
 
-      if( rules_ & AS_DEC ) {
+      stringstream hexString;
+      if( value_ == 0 ) {
+         hexString << 0 << " ";
+      } else {
+         hexString << "0x" << hex << value_;
+      }
+
+      stringstream charString;
+      for( size_t i = 0 ; i < sizeof( value_ ) ; i++ ) {
+         charString << *(((char*)&value_) + i);
+      }
+
+
+      if( rules_ & AS_HEX && rules_ & AS_CHAR ) {
+         resultString << hexString.str() << " (" << charString.str() << ")";
+      } else if( rules_ & AS_DEC && rules_ & AS_HEX ) {
+         resultString << hexString.str() << " (" << dec << value_ << " bytes)";
+      } else if( rules_ & AS_DEC ) {
          resultString << dec << value_ << " ";
-      }
-
-      if( rules_ & AS_HEX ) {
-         if( value_ == 0 ) {
-            resultString << 0 << " ";
-         } else {
-            resultString << "0x" << hex << value_ << " ";
-         }
-      }
-
-      if( rules_ & AS_CHAR ) {
-         resultString << "(";
-         for( size_t i = 0 ; i < sizeof( value_ ) ; i++ ) {
-            resultString << *(((char*)&value_) + i);
-         }
-         resultString << ")";
+      } else if( rules_ & AS_HEX ) {
+         resultString << hexString.str();
+      } else if( rules_ & AS_CHAR ) {
+         resultString << charString.str();
       }
 
       if( rules_ & WITH_TIME ) {
@@ -303,13 +308,13 @@ public:
    Section_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
-      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR ) } );
-      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_HEX  ) } );
-      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX  ) } );
-      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_HEX  ) } );
-      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX  ) } );
-      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX  ) } );
-      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX  ) } );
+      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR          ) } );
+      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_DEC | AS_HEX  ) } );
+      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX           ) } );
+      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_DEC | AS_HEX  ) } );
+      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX           ) } );
+      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX           ) } );
+      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX           ) } );
    }
 
    /// Print the Section_FieldMap
