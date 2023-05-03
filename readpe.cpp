@@ -17,7 +17,7 @@
 #include <string>    // For string
 
 #include <boost/algorithm/string/trim.hpp>  // For boost::algorithm::trim_copy()
-#include <boost/core/typeinfo.hpp>  // For boost::core::demangle()
+#include <boost/core/typeinfo.hpp>          // For boost::core::demangle()
 
 using namespace std;
 
@@ -26,25 +26,41 @@ class COFF_FieldMap;  // Forward declaration
 
 typedef uint8_t Rules;  ///< The base-type of our rules flag.
 
-#define AS_DEC    0x01  ///< Print the value as a decimal number
-#define AS_HEX    0x02  ///< Print the value as a hexadecimal number
-#define AS_CHAR   0x04  ///< Print as a fixed-width character array
-#define WITH_TIME 0x08  ///< Print with timestamp
-#define WITH_FLAG 0x10  ///< Decode a single flag
+#define AS_DEC     0x01  ///< Print the value as a decimal number
+#define AS_HEX     0x02  ///< Print the value as a hexadecimal number
+#define AS_CHAR    0x04  ///< Print as a fixed-width character array
+#define WITH_TIME  0x08  ///< Print with timestamp
+#define WITH_FLAG  0x10  ///< Decode a single flag
+#define WITH_FLAGS 0x20  ///< Decode several flags
 
+/// Store the relationship between the field, flag and the printed value
 map<pair<string, uint32_t>, string> flags {
-        { pair( "02_coff_machine", 0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN" }
-       ,{ pair( "02_coff_machine", 0x8664 ), "IMAGE_FILE_MACHINE_AMD64"   }
-       ,{ pair( "02_coff_machine", 0x014c ), "IMAGE_FILE_MACHINE_I386"    }
-       ,{ pair( "02_coff_machine", 0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"   }
-       ,{ pair( "02_coff_machine", 0x0200 ), "IMAGE_FILE_MACHINE_IA64"    }
+         { pair( "02_coff_machine", 0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN" }
+        ,{ pair( "02_coff_machine", 0x8664 ), "IMAGE_FILE_MACHINE_AMD64"   }
+        ,{ pair( "02_coff_machine", 0x014c ), "IMAGE_FILE_MACHINE_I386"    }
+        ,{ pair( "02_coff_machine", 0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"   }
+        ,{ pair( "02_coff_machine", 0x0200 ), "IMAGE_FILE_MACHINE_IA64"    }
+        ,{ pair( "08_coff_characteristics", 0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"    }
+        ,{ pair( "08_coff_characteristics", 0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE"    }
+        ,{ pair( "08_coff_characteristics", 0x0100 ), "IMAGE_FILE_32BIT_MACHINE"    }
 };
 
-void print_characteristics( string label, uint32_t flags ) {
+void print_characteristics(   ///< Print the characteristics
+        string label          ///< The field to search in the #flags map
+       ,uint32_t characteristics ) { ///< The characteristics to search for in the #flags map
+   cout << "    Characteristics names" << endl;
+
    for( uint8_t i = 0 ; i < 32 ; i++ ) {
       uint32_t mask = 1 << i;
-      if( flags | mask ) {
-         // Get the thing.
+      if( characteristics & mask ) {
+         cout << std::setw(42) << std::setfill( ' ' ) << "";
+
+         try {
+            cout << flags.at( pair( label, mask ) );
+         } catch( const out_of_range& ) {
+            cout << "UNKNOWN FLAG MAPPING: " << hex << "0x" << mask;
+         }
+         cout << endl;
       }
    }
 }
@@ -71,9 +87,12 @@ public:
       return offset_;  ///< @return The offset to this Field (relative to the start of this group of fields)
    }
 
-   /// @return The description for this Field
    virtual string get_description() const {
-      return description_;
+      return description_;  ///< @return The description for this Field
+   }
+
+   virtual Rules get_rules() const {
+      return rules_;  ///< @return The special processing rules for this Field
    }
 
    /// @return `true` if this Field is healthy.  `false` if there's a problem.
@@ -215,6 +234,10 @@ public:
                    << setw(34) << field->get_description() + ":"
                    << field->get_value()
                    << endl ;
+
+         if( field->get_rules() & WITH_FLAGS ) {
+            print_characteristics( label, 0x22 );  /// @todo FIX THIS HARDCODE!!
+         }
       }
    }
 };
@@ -280,14 +303,14 @@ public:
    COFF_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
-      this->insert( { "01_coff_signature",            new Field<uint32_t>( 0x00, "coff_signature"          , 0 ) } );
-      this->insert( { "02_coff_machine",              new Field<uint16_t>( 0x04, "Machine"                 , AS_HEX | WITH_FLAG ) } );
-      this->insert( { "03_coff_sections",             new Field<uint16_t>( 0x06, "Number of Sections"      , AS_DEC ) } );
-      this->insert( { "04_coff_timedatestamp",        new Field<uint32_t>( 0x08, "Date/time stamp"         , AS_DEC | WITH_TIME ) } );
-      this->insert( { "05_coff_PointerToSymbolTable", new Field<uint32_t>( 0x0C, "Symbol Table offset"     , AS_DEC ) } );
-      this->insert( { "06_coff_NumberOfSymbols",      new Field<uint32_t>( 0x10, "Number of symbols"       , AS_DEC ) } );
-      this->insert( { "07_coff_SizeOfOptionalHeader", new Field<uint16_t>( 0x14, "Size of optional header" , AS_HEX ) } );
-      this->insert( { "08_coff_characteristics",      new Field<uint16_t>( 0x16, "Characteristics"         , AS_HEX ) } );
+      this->insert( { "01_coff_signature",            new Field<uint32_t>( 0x00, "coff_signature"          , 0                   ) } );
+      this->insert( { "02_coff_machine",              new Field<uint16_t>( 0x04, "Machine"                 , AS_HEX | WITH_FLAG  ) } );
+      this->insert( { "03_coff_sections",             new Field<uint16_t>( 0x06, "Number of Sections"      , AS_DEC              ) } );
+      this->insert( { "04_coff_timedatestamp",        new Field<uint32_t>( 0x08, "Date/time stamp"         , AS_DEC | WITH_TIME  ) } );
+      this->insert( { "05_coff_PointerToSymbolTable", new Field<uint32_t>( 0x0C, "Symbol Table offset"     , AS_DEC              ) } );
+      this->insert( { "06_coff_NumberOfSymbols",      new Field<uint32_t>( 0x10, "Number of symbols"       , AS_DEC              ) } );
+      this->insert( { "07_coff_SizeOfOptionalHeader", new Field<uint16_t>( 0x14, "Size of optional header" , AS_HEX              ) } );
+      this->insert( { "08_coff_characteristics",      new Field<uint16_t>( 0x16, "Characteristics"         , AS_HEX | WITH_FLAGS ) } );
    }
 
    /// @return The file offset to the top of the section table
