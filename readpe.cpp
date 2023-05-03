@@ -34,12 +34,8 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 #define WITH_TIME 0x20  ///< Print with timestamp
 
 
-/// Format the heading for dumping members of a class to the console
-///
-/// Print =====================
-#define PRINT_HEADING_FOR_DUMP                                                \
-    /* Print =========================================================== */   \
-    cout << setw(80) << setfill( '=' ) << "" << endl
+/// Print `=====================`... across the screen
+#define PRINT_HEADING_FOR_DUMP cout << setw(80) << setfill( '=' ) << "" << endl
 
 
 /// Format a line for dumping the members of a class to the console.
@@ -484,6 +480,11 @@ protected:
 };
 
 
+/// Main entry point for readpe
+
+/// @param argc The number of arguments
+/// @param argv An array of arguments as strings
+/// @return The result code for this program
 int main( int argc, char* argv[] ) {
     if( argc <= 1 ) {
        cout << "Usage:  readpe PEfile" << endl;
