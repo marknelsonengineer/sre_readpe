@@ -38,3 +38,5 @@ readpe
 
 # Ignore CLion files
 .idea/
+
+.gdb_history
