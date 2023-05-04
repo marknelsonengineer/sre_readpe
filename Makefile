@@ -45,7 +45,7 @@ lint: $(MAIN)
 valgrind: $(MAIN)
 	sudo DEBUGINFOD_URLS="https://debuginfod.archlinux.org"                    \
 	valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --quiet  \
-	./$(MAIN) ./exe_files/catnap32.exe
+	./$(MAIN) ./exe_files/*
 
 clean:
 	rm -f $(OBJS) $(MAIN)
