@@ -55,7 +55,7 @@ map<pair<string, uint32_t>, string> flags {
         ,{ pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"               }
         ,{ pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"                  }
         ,{ pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"                 }
-};
+}; // flags
 
 
 /// FieldBase is an any-type base class for Field.
@@ -169,7 +169,7 @@ public:
       }
 
       return resultString.str();
-   }
+   } // get_value()
 
    virtual void set_value(
            vector<char>& file_buffer
@@ -194,7 +194,7 @@ public:
             cout << endl;
          }
       }
-   }
+   } // print_characteristics()
 }; // Field
 
 
@@ -240,8 +240,8 @@ public:
             field->print_characteristics( label );
          }
       }
-   }
-};
+   } // print()
+}; // FieldMap
 
 
 /// A DOS-specific FieldMap
@@ -269,7 +269,7 @@ public:
       this->insert( { "14_dos_e_oemid",    new Field<uint16_t>( 0x24, "OEM identifier"              , AS_DEC           ) } );
       this->insert( { "15_dos_e_oeminfo",  new Field<uint16_t>( 0x26, "OEM information"             , AS_DEC           ) } );
       this->insert( { "16_dos_e_lfanew",   new Field<uint32_t>( 0x3C, "PE header offset"            , AS_HEX           ) } );
-   }
+   } // DOS_FieldMap()
 
    /// @return The PEFile.buffer_ offset to the COFF section
    uint32_t get_exe_header_offset() {
@@ -290,7 +290,7 @@ public:
       cout << "DOS Header" << endl;
       FieldMap::print();
    }
-};
+}; // DOS_FieldMap
 
 
 /// A COFF-specific FieldMap
@@ -341,7 +341,7 @@ public:
       cout << "COFF/File header" << endl;
       FieldMap::print();
    }
-};
+}; // COFF_FieldMap
 
 
 /// A Section-specific FieldMap
@@ -366,7 +366,7 @@ public:
       cout << "    Section" << endl;
       FieldMap::print();
    }
-};
+}; // Section_FieldMap
 
 
 /// This class represents a Windows Portable Executable file
@@ -430,8 +430,8 @@ public:
          //sections.push_back( newSection );
          cout << endl;
       }
-   }
-};
+   } // print()
+}; // PEFile
 
 
 /// Main entry point for readpe
@@ -451,4 +451,4 @@ int main( int argc, char* argv[] ) {
    } catch ( exception& catchAll ) {
       cout << "readpe threw an uncaught exception" << endl;
    }
-}
+} // main()
