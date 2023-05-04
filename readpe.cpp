@@ -431,13 +431,14 @@ int main( int argc, char* argv[] ) {
          throw( invalid_argument( "Usage:  readpe PEfile" ) );
       }
 
-      /// @todo Convert into a for() loop and process all of the files on the command line
-      PEFile pe_file( argv[1] );
-      pe_file.print();
+      for( int i = 1 ; i < argc ; i++ ) {
+         PEFile pe_file( argv[i] );
+         pe_file.print();
+      }
 
-      return 0;  /// @return The result code for this program
    } catch ( exception& generalException ) {
       cout << generalException.what() << endl;
       exit( EXIT_FAILURE );
    }
+   return EXIT_SUCCESS;  /// @return The result code for this program
 } // main()
