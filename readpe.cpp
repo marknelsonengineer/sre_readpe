@@ -380,18 +380,22 @@ public:
    /// Read the PEFile at `new_file_path`
    ///
    /// @param new_file_path The name of the PE file to process
-   PEFile(const string& new_file_path) : file_path_(new_file_path) {
-      ifstream file(file_path_, ios::binary); //TODO: This is not working
-      if (!file.is_open()) {
-         throw runtime_error("Failed to open the file: " + file_path_);
+   PEFile( const string& new_file_path ) : file_path_( new_file_path ) {
+      ifstream file( file_path_, ios::binary | ios::ate );
+      if ( !file ) {
+         throw runtime_error( "Failed to open " + file_path_ );
       }
 
-      file.seekg(0, ios::end);
       file_size_ = file.tellg();
-      file.seekg(0, ios::beg);
+      if( file_size_ <= 0 ) {
+         throw runtime_error( "Unable to process empty file " + file_path_ );
+      }
+      buffer_.resize( file_size_ );
 
-      buffer_.resize(file_size_);
-      file.read(buffer_.data(), file_size_);
+      file.seekg( 0, ios::beg );
+      if( !file.read(buffer_.data(), file_size_) ) {
+         throw runtime_error( "Unable to read file " + file_path_ );
+      }
       file.close();
    }
 
