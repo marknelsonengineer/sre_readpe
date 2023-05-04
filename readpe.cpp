@@ -9,6 +9,7 @@
 /// @author Mark Nelson <marknels@hawaii.edu>
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm> // For all_of()
 #include <execution> // For execution::par
 #include <fstream>   // For file_path_
 #include <iomanip>   // For setfill()
