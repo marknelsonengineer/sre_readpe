@@ -208,7 +208,7 @@ public:
    /// There's nothing to validate for a generic `map` nor #file_offset_
    virtual bool validate() const {
       return all_of( execution::par, this->cbegin(), this->cend(),
-                [](pair<string, FieldBase*> fieldBase) {  // This is a Lambda expression
+                [](const pair<string, FieldBase*> &fieldBase) {  // This is a parallel Lambda expression
          return fieldBase.second->validate();
       } );  /// @return `true` if everything is valid.  `false` if there's a problem.
    }
