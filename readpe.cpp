@@ -67,12 +67,12 @@ protected:
 
 public:
    /// Construct a FieldBase with an offset, description and rules.
-   FieldBase(const size_t     new_offset       ///< The offset into this section of fields
-            ,const string     new_description  ///< The description of this Field
-            ,const Rules      new_rules )      ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
-            :offset_      ( new_offset )       // Member initialization
-            ,description_ ( new_description )  // Member initialization
-            ,rules_       ( new_rules )        // Member initialization
+   FieldBase(const size_t  new_offset       ///< The offset into this section of fields
+            ,const string& new_description  ///< The description of this Field
+            ,const Rules   new_rules )      ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
+            :offset_      ( new_offset )        // Member initialization
+            ,description_ ( new_description )   // Member initialization
+            ,rules_       ( new_rules )         // Member initialization
    {}
 
 
@@ -122,9 +122,9 @@ protected:
 
 public:
    /// Construct a Field with an offset, description and rules.
-   Field(   const size_t      new_offset  ///< The offset into this section of fields
-           ,const string new_description  ///< The description of this Field
-           ,const Rules       new_rules   ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
+   Field(   const size_t  new_offset       ///< The offset into this section of fields
+           ,const string& new_description  ///< The description of this Field
+           ,const Rules   new_rules        ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
    ) : FieldBase( new_offset, new_description, new_rules )
            ,value_       { T() }
    {}
