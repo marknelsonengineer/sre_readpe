@@ -26,6 +26,7 @@ class COFF_FieldMap;  // Forward declaration
 
 typedef uint8_t Rules;  ///< The base-type of our rules flag.
 
+// Special processing rules
 #define AS_DEC     0x01  ///< Print the value as a decimal number
 #define AS_HEX     0x02  ///< Print the value as a hexadecimal number
 #define AS_CHAR    0x04  ///< Print as a fixed-width character array
@@ -33,39 +34,40 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 #define WITH_FLAG  0x10  ///< Decode a single flag
 #define WITH_FLAGS 0x20  ///< Decode several flags
 
-/// Store the relationship between the field, flag and the printed value
+/// The relationship between the field, flag and the printed value
 map<pair<string, uint32_t>, string> flags {
-         { pair( "02_coff_machine", 0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN" }
-        ,{ pair( "02_coff_machine", 0x8664 ), "IMAGE_FILE_MACHINE_AMD64"   }
-        ,{ pair( "02_coff_machine", 0x014c ), "IMAGE_FILE_MACHINE_I386"    }
-        ,{ pair( "02_coff_machine", 0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"   }
-        ,{ pair( "02_coff_machine", 0x0200 ), "IMAGE_FILE_MACHINE_IA64"    }
-        ,{ pair( "08_coff_characteristics", 0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"    }
-        ,{ pair( "08_coff_characteristics", 0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE"    }
-        ,{ pair( "08_coff_characteristics", 0x0100 ), "IMAGE_FILE_32BIT_MACHINE"    }
-        ,{ pair( "07_section_characteristics", 0x00000020 ), "IMAGE_SCN_CNT_CODE"    }
-        ,{ pair( "07_section_characteristics", 0x00000040 ), "IMAGE_SCN_CNT_INITIALIZED_DATA"    }
-        ,{ pair( "07_section_characteristics", 0x02000000 ), "IMAGE_SCN_MEM_DISCARDABLE"    }
-        ,{ pair( "07_section_characteristics", 0x04000000 ), "IMAGE_SCN_MEM_NOT_CACHED"    }
-        ,{ pair( "07_section_characteristics", 0x08000000 ), "IMAGE_SCN_MEM_NOT_PAGED"    }
-        ,{ pair( "07_section_characteristics", 0x10000000 ), "IMAGE_SCN_MEM_SHARED"    }
-        ,{ pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"    }
-        ,{ pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"    }
-        ,{ pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"    }
+         { pair( "02_coff_machine",                0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN"     }
+        ,{ pair( "02_coff_machine",                0x8664 ), "IMAGE_FILE_MACHINE_AMD64"       }
+        ,{ pair( "02_coff_machine",                0x014c ), "IMAGE_FILE_MACHINE_I386"        }
+        ,{ pair( "02_coff_machine",                0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"       }
+        ,{ pair( "02_coff_machine",                0x0200 ), "IMAGE_FILE_MACHINE_IA64"        }
+        ,{ pair( "08_coff_characteristics",        0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"    }
+        ,{ pair( "08_coff_characteristics",        0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE" }
+        ,{ pair( "08_coff_characteristics",        0x0100 ), "IMAGE_FILE_32BIT_MACHINE"       }
+        ,{ pair( "07_section_characteristics", 0x00000020 ), "IMAGE_SCN_CNT_CODE"             }
+        ,{ pair( "07_section_characteristics", 0x00000040 ), "IMAGE_SCN_CNT_INITIALIZED_DATA" }
+        ,{ pair( "07_section_characteristics", 0x02000000 ), "IMAGE_SCN_MEM_DISCARDABLE"      }
+        ,{ pair( "07_section_characteristics", 0x04000000 ), "IMAGE_SCN_MEM_NOT_CACHED"       }
+        ,{ pair( "07_section_characteristics", 0x08000000 ), "IMAGE_SCN_MEM_NOT_PAGED"        }
+        ,{ pair( "07_section_characteristics", 0x10000000 ), "IMAGE_SCN_MEM_SHARED"           }
+        ,{ pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"          }
+        ,{ pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"             }
+        ,{ pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"            }
 };
+
 
 /// FieldBase is an any-type base class for Field.
 class FieldBase {
 protected:
-   size_t offset_;      ///< The offset into a section to find this Field
+   size_t offset_;      ///< The offset into this section of fields
    string description_; ///< A description of this Field
-   Rules  rules_;       ///< Encode special processing rules for this Field
+   Rules  rules_;       ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
 
 public:
-   /// Constructor that accepts an offset, description and rules.
-   FieldBase(const size_t     new_offset       ///< The offset into the file's section to the start of the value stored in the file
+   /// Construct a FieldBase with an offset, description and rules.
+   FieldBase(const size_t     new_offset       ///< The offset into this section of fields
             ,const string     new_description  ///< The description of this Field
-            ,const Rules      new_rules )      ///< Encode special processing rules for this Field
+            ,const Rules      new_rules )      ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
             :offset_      ( new_offset )       // Member initialization
             ,description_ ( new_description )  // Member initialization
             ,rules_       ( new_rules )        // Member initialization
@@ -73,15 +75,15 @@ public:
 
 
    virtual size_t get_offset() const {
-      return offset_;  ///< @return The offset to this Field (relative to the start of this group of fields)
+      return offset_;  /// @return Field.offset_ (The offset is relative to the start of this group of fields)
    }
 
    virtual string get_description() const {
-      return description_;  ///< @return The description for this Field
+      return description_;  /// @return A description for this Field
    }
 
    virtual Rules get_rules() const {
-      return rules_;  ///< @return The special processing rules for this Field
+      return rules_;  /// @return Special processing rules for this Field
    }
 
    /// @return `true` if this Field is healthy.  `false` if there's a problem.
@@ -92,39 +94,39 @@ public:
       return true;
    }
 
-   /// We don't really want the value, what we really want is the value as a string...
-   virtual string get_value() const = 0;  ///< @return The value of the Field (as a string)
+   /// We don't really want Field.value_... we really want the value as a `string`!
+   virtual string get_value() const = 0;  ///< @return The value of Field.value_ (as a string)
 
-   /// Read the PE File and set the Field value
+   /// Extract bytes from PEFile.buffer_ using `file_offset` and #offset_ and set Field.value_
    virtual void set_value(
-           vector<char>& file_buffer  ///< The contents of the PE File
-          ,size_t file_offset ) = 0;  ///< The file offset to this group of fields (not necessarily this particular field)
+           vector<char>& file_buffer         ///< A pointer to PEFile.buffer_
+          ,size_t        file_offset ) = 0;  ///< The PEFile.buffer_ offset to the start of this group of fields (not necessarily this particular field)
 
-   virtual void print_characteristics(      ///< Print the characteristics flags
-           const string label ) const = 0;  ///< The field to search in the #flags map
+   /// Print the characteristics #flags
+   /// @param label The field to search in the #flags map
+   virtual void print_characteristics(
+           const string label ) const = 0;
+}; // FieldBase
 
-};
 
-
-/// Field is a template that creates classes to store a Field with a specific type
+/// Field is a template derived from FieldBase that holds fields with a specific type
 template <typename T>
 class Field : public FieldBase {
-   friend DOS_FieldMap;     ///< DOS_FieldMap needs to directly access `field_` for validation
-   friend COFF_FieldMap;   ///< COFF_FieldMap needs to directly access `field_` for validation
+   friend DOS_FieldMap;   ///< Directly accesses Field.value_ for validation
+   friend COFF_FieldMap;  ///< Directly accesses Field.value_ for validation
 
 protected:
    T value_;  ///< The value of this Field
 
 public:
-   /// Construct a Field with an offset, description and decorator rules.
-   Field(   const size_t      new_offset  ///< The offset into the file's section to the start of the value stored in the file
+   /// Construct a Field with an offset, description and rules.
+   Field(   const size_t      new_offset  ///< The offset into this section of fields
            ,const string new_description  ///< The description of this Field
-           ,const Rules       new_rules   ///< The decorator rules for this Field
+           ,const Rules       new_rules   ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
    ) : FieldBase( new_offset, new_description, new_rules )
            ,value_       { T() }
    {}
 
-   /// @return The current value of the Field (as a string).
    string get_value() const override {
       stringstream resultString;
 
@@ -139,7 +141,6 @@ public:
       for( size_t i = 0 ; i < sizeof( value_ ) ; i++ ) {
          charString << *(((char*)&value_) + i);
       }
-
 
       if( rules_ & AS_HEX && rules_ & AS_CHAR ) {
          resultString << hexString.str() << " (" << charString.str() << ")";
@@ -172,16 +173,14 @@ public:
       return resultString.str();
    }
 
-   /// Set the value of the Field
    virtual void set_value(
-           vector<char>& file_buffer  ///< The contents of the PE File
-          ,size_t file_offset         ///< The offset to this header in the file
+           vector<char>& file_buffer
+          ,size_t file_offset
           ) override {
-      memcpy(&value_, &file_buffer[file_offset + offset_], sizeof(value_));
+      memcpy( &value_, &file_buffer[file_offset + offset_], sizeof(value_) );
    }
 
-   virtual void print_characteristics(             ///< Print the characteristics flags
-            const string label ) const override {  ///< The field to search in the #flags map
+   virtual void print_characteristics( const string label ) const override {
       cout << "    Characteristics names" << endl;
 
       for( uint8_t i = 0 ; i < sizeof( T )*8 ; i++ ) {
@@ -204,7 +203,7 @@ public:
 /// A generic Map of Field objects
 class FieldMap : public map<string, FieldBase*> {
 protected:
-   size_t file_offset_ = 0;  ///< The offset into the file where this collection of fields starts
+   size_t file_offset_ = 0;  ///< Offset into PEFile.buffer_ where this group of fields start
 
 public:
    /// Validate each of the fields in this Map (generic)
@@ -222,9 +221,8 @@ public:
       return true;  /// @return `true` if everything is valid.  `false` if there's a problem.
    }
 
-   /// Parse data out of PEFile to populate the Fields
-   ///
-   /// @param file_buffer A reference to the file's contents
+   /// Parse data from PEFile.buffer_ to populate Field.value_
+   /// @param file_buffer Pointer to PEFile.buffer_
    virtual void parse( vector<char>& file_buffer ) {
       for (const auto& [label, field] : *this ) {
          field->set_value( file_buffer, file_offset_ );
@@ -241,8 +239,8 @@ public:
          }                              // for validation that we don't want to print
 
          cout << "    "
-                   << setfill( ' ' )  /* Space pad    */
-                   << left            /* Left justify */
+                   << setfill( ' ' )  // Space pad
+                   << left            // Left justify
                    << setw(34) << field->get_description() + ":"
                    << field->get_value()
                    << endl ;
@@ -257,7 +255,7 @@ public:
 
 /// A DOS-specific FieldMap
 ///
-/// @see offset reference http://www.sunshine2k.de/reversing/tuts/tut_pe.htm
+/// @see DOS header reference: http://www.sunshine2k.de/reversing/tuts/tut_pe.htm
 class DOS_FieldMap : public FieldMap {
 public:
    /// Create a new DOS_FieldMap
@@ -282,12 +280,11 @@ public:
       this->insert( { "16_dos_e_lfanew",   new Field<uint32_t>( 0x3C, "PE header offset"            , AS_HEX           ) } );
    }
 
-   /// @return The file offset to the COFF section
+   /// @return The PEFile.buffer_ offset to the COFF section
    uint32_t get_exe_header_offset() {
       return dynamic_cast<Field<uint32_t>*>(this->at( "16_dos_e_lfanew" ))->value_;
    }
 
-   /// @return `true` if the DOS_FieldMap is valid
    virtual bool validate() const {
       if( !FieldMap::validate() ) { return false; }
 
@@ -298,7 +295,6 @@ public:
       return true ;
    }
 
-   /// Print the DOS_FieldMap
    virtual void print() const {
       cout << "DOS Header" << endl;
       FieldMap::print();
@@ -311,7 +307,7 @@ class COFF_FieldMap : public FieldMap {
 public:
    /// Create a new COFF_FieldMAp at `new_file_offset`
    ///
-   /// @param new_file_offset The offset into the file for this collection of fields
+   /// @param new_file_offset The offset into PEFile.buffer_ for this group of fields
    COFF_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
@@ -332,12 +328,11 @@ public:
       return file_offset_ + 0x18 + dynamic_cast<Field<uint16_t>*>(this->at( "07_coff_SizeOfOptionalHeader" ))->value_;
    }
 
-   /// @return The number of sections in this PE file
+   /// @return The number of sections in this PEFile
    uint16_t get_number_of_sections() {
       return dynamic_cast<Field<uint16_t>*>(this->at( "03_coff_sections" ))->value_;
    }
 
-   /// @return `true` if the COFF_FieldMap is healthy
    virtual bool validate() const {
       if( !FieldMap::validate() ) {
          return false;
@@ -351,7 +346,6 @@ public:
       return true ;
    }
 
-   /// Print the COFF_FieldMap
    virtual void print() const {
       cout << "COFF/File header" << endl;
       FieldMap::print();
@@ -362,9 +356,9 @@ public:
 /// A Section-specific FieldMap
 class Section_FieldMap : public FieldMap {
 public:
-   /// Create a new Section_FieldMAp at `new_file_offset`
+   /// Create a new Section_FieldMap at `new_file_offset`
    ///
-   /// @param new_file_offset The offset into the file for this collection of fields
+   /// @param new_file_offset The offset into PEFile.buffer_ for this group of fields
    Section_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
@@ -377,7 +371,6 @@ public:
       this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX | WITH_FLAGS ) } );
    }
 
-   /// Print the Section_FieldMap
    virtual void print() const {
       cout << "    Section" << endl;
       FieldMap::print();
@@ -385,12 +378,12 @@ public:
 };
 
 
-/// This class represents a PEFile
+/// This class represents a Windows Portable Executable file
 class PEFile {
 protected:
-   string       file_path_;  ///< The name of the PE file
-   size_t       file_size_;  ///< The size of the PE file
-   vector<char> buffer_;     ///< The contents of the PE file
+   string       file_path_;  ///< The name of the PEFile
+   size_t       file_size_;  ///< The size of the PEFile
+   vector<char> buffer_;     ///< The contents of the PEFile
 
 public:
    /// Read the PEFile at `new_file_path`
@@ -411,7 +404,7 @@ public:
       file.close();
    }
 
-   /// Print the headers and sections of this PE File
+   /// Print the headers and sections of this PEFile
    virtual void print() {
       DOS_FieldMap dos_field_map_;
 
@@ -448,8 +441,10 @@ public:
 
 
 /// Main entry point for readpe
-int main( int argc,         ///< The number of arguments
-          char* argv[] ) {  ///< An array of arguments as strings
+/// @param argc The number of arguments
+/// @param argv An array of arguments as strings
+int main( int argc,
+          char* argv[] ) {
     if( argc <= 1 ) {
        cout << "Usage:  readpe PEfile" << endl;
     }
