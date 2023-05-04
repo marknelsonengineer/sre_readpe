@@ -374,7 +374,7 @@ public:
 class PEFile {
 protected:
    string       file_path_;  ///< The name of the PEFile
-   size_t       file_size_;  ///< The size of the PEFile
+   long         file_size_;  ///< The size of the PEFile
    vector<char> buffer_;     ///< The contents of the PEFile
 
 public:
