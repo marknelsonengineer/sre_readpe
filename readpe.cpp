@@ -90,9 +90,8 @@ public:
 
    /// @return `true` if this Field is healthy.  `false` if there's a problem.
    virtual bool validate() const {
-      // Nothing to validate for offset_
+      /// Nothing to validate for #offset_ and #rules_
       if( description_.empty() ) { return false; }
-
       return true;
    }
 
@@ -157,11 +156,8 @@ public:
       }
 
       if( rules_ & WITH_TIME ) {
-         resultString << "(";
-         const time_t t = value_;
-         const tm tm = *gmtime(&t);
-         resultString << put_time(&tm, "%c %Z");
-         resultString << ")";
+         const time_t timestamp = value_;
+         resultString << "(" << put_time(gmtime( &timestamp ), "%c %Z") << ")";
       }
 
       if( rules_ & WITH_FLAG ) {
@@ -185,7 +181,7 @@ public:
    virtual void print_characteristics( const string label ) const override {
       cout << "    Characteristics names" << endl;
 
-      for( uint8_t i = 0 ; i < sizeof( T )*8 ; i++ ) {
+      for( size_t i = 0 ; i < sizeof( T )*8 ; i++ ) {
          T mask = 1 << i;
          if( value_ & mask ) {
             cout << std::setw(42) << std::setfill( ' ' ) << "";
@@ -411,7 +407,7 @@ public:
       }
       dos_field_map_.print();
 
-      uint32_t coff_offset = dos_field_map_.get_exe_header_offset();
+      const uint32_t coff_offset = dos_field_map_.get_exe_header_offset();
 
       COFF_FieldMap coff_header_map { coff_offset };
       coff_header_map.parse( buffer_ );
