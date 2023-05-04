@@ -31,7 +31,6 @@ Prototype/
 .DS_Store
 
 # Ignore executable files
-*.exe
 *.out
 *.app
 readpe
