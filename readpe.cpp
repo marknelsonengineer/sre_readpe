@@ -37,24 +37,24 @@ typedef uint8_t Rules;  ///< The base-type of our rules flag.
 
 /// The relationship between the field, flag and the printed value
 map<pair<string, uint32_t>, string> flags {
-         { pair( "02_coff_machine",                0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN"          }
-        ,{ pair( "02_coff_machine",                0x8664 ), "IMAGE_FILE_MACHINE_AMD64"            }
-        ,{ pair( "02_coff_machine",                0x014c ), "IMAGE_FILE_MACHINE_I386"             }
-        ,{ pair( "02_coff_machine",                0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"            }
-        ,{ pair( "02_coff_machine",                0x0200 ), "IMAGE_FILE_MACHINE_IA64"             }
-        ,{ pair( "08_coff_characteristics",        0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"         }
-        ,{ pair( "08_coff_characteristics",        0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE"      }
-        ,{ pair( "08_coff_characteristics",        0x0100 ), "IMAGE_FILE_32BIT_MACHINE"            }
-        ,{ pair( "08_coff_characteristics",        0x2000 ), "IMAGE_DLLCHARACTERISTICS_WDM_DRIVER" }
-        ,{ pair( "07_section_characteristics", 0x00000020 ), "IMAGE_SCN_CNT_CODE"                  }
-        ,{ pair( "07_section_characteristics", 0x00000040 ), "IMAGE_SCN_CNT_INITIALIZED_DATA"      }
-        ,{ pair( "07_section_characteristics", 0x02000000 ), "IMAGE_SCN_MEM_DISCARDABLE"           }
-        ,{ pair( "07_section_characteristics", 0x04000000 ), "IMAGE_SCN_MEM_NOT_CACHED"            }
-        ,{ pair( "07_section_characteristics", 0x08000000 ), "IMAGE_SCN_MEM_NOT_PAGED"             }
-        ,{ pair( "07_section_characteristics", 0x10000000 ), "IMAGE_SCN_MEM_SHARED"                }
-        ,{ pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"               }
-        ,{ pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"                  }
-        ,{ pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"                 }
+         { make_pair( "02_coff_machine",                0x0000 ), "IMAGE_FILE_MACHINE_UNKNOWN"          }
+        ,{ make_pair( "02_coff_machine",                0x8664 ), "IMAGE_FILE_MACHINE_AMD64"            }
+        ,{ make_pair( "02_coff_machine",                0x014c ), "IMAGE_FILE_MACHINE_I386"             }
+        ,{ make_pair( "02_coff_machine",                0xaa64 ), "IMAGE_FILE_MACHINE_ARM64"            }
+        ,{ make_pair( "02_coff_machine",                0x0200 ), "IMAGE_FILE_MACHINE_IA64"             }
+        ,{ make_pair( "08_coff_characteristics",        0x0002 ), "IMAGE_FILE_EXECUTABLE_IMAGE"         }
+        ,{ make_pair( "08_coff_characteristics",        0x0020 ), "IMAGE_FILE_LARGE_ADDRESS_AWARE"      }
+        ,{ make_pair( "08_coff_characteristics",        0x0100 ), "IMAGE_FILE_32BIT_MACHINE"            }
+        ,{ make_pair( "08_coff_characteristics",        0x2000 ), "IMAGE_DLLCHARACTERISTICS_WDM_DRIVER" }
+        ,{ make_pair( "07_section_characteristics", 0x00000020 ), "IMAGE_SCN_CNT_CODE"                  }
+        ,{ make_pair( "07_section_characteristics", 0x00000040 ), "IMAGE_SCN_CNT_INITIALIZED_DATA"      }
+        ,{ make_pair( "07_section_characteristics", 0x02000000 ), "IMAGE_SCN_MEM_DISCARDABLE"           }
+        ,{ make_pair( "07_section_characteristics", 0x04000000 ), "IMAGE_SCN_MEM_NOT_CACHED"            }
+        ,{ make_pair( "07_section_characteristics", 0x08000000 ), "IMAGE_SCN_MEM_NOT_PAGED"             }
+        ,{ make_pair( "07_section_characteristics", 0x10000000 ), "IMAGE_SCN_MEM_SHARED"                }
+        ,{ make_pair( "07_section_characteristics", 0x20000000 ), "IMAGE_SCN_MEM_EXECUTE"               }
+        ,{ make_pair( "07_section_characteristics", 0x40000000 ), "IMAGE_SCN_MEM_READ"                  }
+        ,{ make_pair( "07_section_characteristics", 0x80000000 ), "IMAGE_SCN_MEM_WRITE"                 }
 };
 
 
@@ -166,7 +166,7 @@ public:
 
       if( rules_ & WITH_FLAG ) {
          try {
-            resultString << " " << flags.at( pair( "02_coff_machine", value_) );
+            resultString << " " << flags.at( make_pair( "02_coff_machine", value_) );
          } catch( const out_of_range& ) {
             resultString << "UNKNOWN FLAG MAPPING";
          }
@@ -191,7 +191,7 @@ public:
             cout << std::setw(42) << std::setfill( ' ' ) << "";
 
             try {
-               cout << flags.at( pair( label, mask ) );
+               cout << flags.at( make_pair( label, mask ) );
             } catch( const out_of_range& ) {
                cout << "UNKNOWN FLAG MAPPING: " << hex << "0x" << mask;
             }
