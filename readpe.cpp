@@ -199,7 +199,7 @@ public:
 
 
 /// A generic Map of Field objects
-class FieldMap : public map<string, FieldBase*> {
+class FieldMap : public map<string, unique_ptr<FieldBase>> {
 protected:
    size_t file_offset_ { 0 };  ///< Offset into PEFile.buffer_ where this group of fields start
 
@@ -207,24 +207,26 @@ public:
    /// Validate each Field in this Map (generic)
    /// There's nothing to validate for a generic `map` nor #file_offset_
    virtual bool validate() const {
-      return all_of( execution::par, this->cbegin(), this->cend(),
-                [](const pair<string, FieldBase*> &fieldBase) {  // This is a parallel Lambda expression
-         return fieldBase.second->validate();
-      } );  /// @return `true` if everything is valid.  `false` if there's a problem.
+      for (const auto& [label, field] : *this ) {
+         if( ! (*field).validate() ) {
+            return false;
+         }
+      }
+      return true;  /// @return `true` if everything is valid.  `false` if there's a problem.
    }
 
    /// Parse data from PEFile.buffer_ to populate Field.value_
    /// @param file_buffer Pointer to PEFile.buffer_
    virtual void parse( vector<char>& file_buffer ) {
       for (const auto& [label, field] : *this ) {
-         field->set_value( file_buffer, file_offset_ );
+         (*field).set_value( file_buffer, file_offset_ );
       }
    }
 
    /// Print this FieldMap (generic)
    virtual void print() const {
       for (const auto& [label, field] : *this ) {
-         const string valueAsString = field->get_value();
+         const string valueAsString = (*field).get_value();
 
          if( valueAsString.empty() ) {  // If it's empty, then skip it
             continue;                   // We may need to bring in a field
@@ -232,12 +234,12 @@ public:
 
          cout << "    " << setfill( ' ' )  // Space pad
                         << left            // Left justify
-                        << setw(34) << field->get_description() + ":"
-                        << field->get_value()
+                        << setw(34) << (*field).get_description() + ":"
+                        << (*field).get_value()
                         << endl ;
 
-         if( field->get_rules() & WITH_FLAGS ) {
-            field->print_characteristics( label );
+         if( (*field).get_rules() & WITH_FLAGS ) {
+            (*field).print_characteristics( label );
          }
       }
    } // print()
@@ -253,27 +255,27 @@ public:
    DOS_FieldMap() {
       file_offset_ = 0;
 
-      this->insert( { "01_dos_e_magic",    new Field<uint16_t>( 0x00, "Magic number"                , AS_HEX | AS_CHAR ) } );
-      this->insert( { "02_dos_e_cblp",     new Field<uint16_t>( 0x02, "Bytes in last page"          , AS_DEC           ) } );
-      this->insert( { "03_dos_e_cp",       new Field<uint16_t>( 0x04, "Pages in file"               , AS_DEC           ) } );
-      this->insert( { "04_dos_e_crlc",     new Field<uint16_t>( 0x06, "Relocations"                 , AS_DEC           ) } );
-      this->insert( { "05_dos_e_cparhdr",  new Field<uint16_t>( 0x08, "Size of header in paragraphs", AS_DEC           ) } );
-      this->insert( { "06_dos_e_minalloc", new Field<uint16_t>( 0x0A, "Minimum extra paragraphs"    , AS_DEC           ) } );
-      this->insert( { "07_dos_e_maxalloc", new Field<uint16_t>( 0x0C, "Maximum extra paragraphs"    , AS_DEC           ) } );
-      this->insert( { "08_dos_e_ss",       new Field<uint16_t>( 0x0E, "Initial (relative) SS value" , AS_DEC           ) } );
-      this->insert( { "09_dos_e_sp",       new Field<uint16_t>( 0x10, "Initial SP value"            , AS_HEX           ) } );
-      this->insert( { "10_dos_e_ip",       new Field<uint16_t>( 0x14, "Initial IP value"            , AS_HEX           ) } );
-      this->insert( { "11_dos_e_cs",       new Field<uint16_t>( 0x16, "Initial (relative) CS value" , AS_HEX           ) } );
-      this->insert( { "12_dos_e_lfarlc",   new Field<uint16_t>( 0x18, "Address of relocation table" , AS_HEX           ) } );
-      this->insert( { "13_dos_e_ovno",     new Field<uint16_t>( 0x1A, "Overlay number"              , AS_DEC           ) } );
-      this->insert( { "14_dos_e_oemid",    new Field<uint16_t>( 0x24, "OEM identifier"              , AS_DEC           ) } );
-      this->insert( { "15_dos_e_oeminfo",  new Field<uint16_t>( 0x26, "OEM information"             , AS_DEC           ) } );
-      this->insert( { "16_dos_e_lfanew",   new Field<uint32_t>( 0x3C, "PE header offset"            , AS_HEX           ) } );
+      this->insert( { "01_dos_e_magic",    make_unique<Field<uint16_t>>( 0x00, "Magic number"                , AS_HEX | AS_CHAR ) } );
+      this->insert( { "02_dos_e_cblp",     make_unique<Field<uint16_t>>( 0x02, "Bytes in last page"          , AS_DEC           ) } );
+      this->insert( { "03_dos_e_cp",       make_unique<Field<uint16_t>>( 0x04, "Pages in file"               , AS_DEC           ) } );
+      this->insert( { "04_dos_e_crlc",     make_unique<Field<uint16_t>>( 0x06, "Relocations"                 , AS_DEC           ) } );
+      this->insert( { "05_dos_e_cparhdr",  make_unique<Field<uint16_t>>( 0x08, "Size of header in paragraphs", AS_DEC           ) } );
+      this->insert( { "06_dos_e_minalloc", make_unique<Field<uint16_t>>( 0x0A, "Minimum extra paragraphs"    , AS_DEC           ) } );
+      this->insert( { "07_dos_e_maxalloc", make_unique<Field<uint16_t>>( 0x0C, "Maximum extra paragraphs"    , AS_DEC           ) } );
+      this->insert( { "08_dos_e_ss",       make_unique<Field<uint16_t>>( 0x0E, "Initial (relative) SS value" , AS_DEC           ) } );
+      this->insert( { "09_dos_e_sp",       make_unique<Field<uint16_t>>( 0x10, "Initial SP value"            , AS_HEX           ) } );
+      this->insert( { "10_dos_e_ip",       make_unique<Field<uint16_t>>( 0x14, "Initial IP value"            , AS_HEX           ) } );
+      this->insert( { "11_dos_e_cs",       make_unique<Field<uint16_t>>( 0x16, "Initial (relative) CS value" , AS_HEX           ) } );
+      this->insert( { "12_dos_e_lfarlc",   make_unique<Field<uint16_t>>( 0x18, "Address of relocation table" , AS_HEX           ) } );
+      this->insert( { "13_dos_e_ovno",     make_unique<Field<uint16_t>>( 0x1A, "Overlay number"              , AS_DEC           ) } );
+      this->insert( { "14_dos_e_oemid",    make_unique<Field<uint16_t>>( 0x24, "OEM identifier"              , AS_DEC           ) } );
+      this->insert( { "15_dos_e_oeminfo",  make_unique<Field<uint16_t>>( 0x26, "OEM information"             , AS_DEC           ) } );
+      this->insert( { "16_dos_e_lfanew",   make_unique<Field<uint32_t>>( 0x3C, "PE header offset"            , AS_HEX           ) } );
    } // DOS_FieldMap()
 
    /// @return The PEFile.buffer_ offset to the COFF section
    uint32_t get_exe_header_offset() {
-      return dynamic_cast<Field<uint32_t>*>(this->at( "16_dos_e_lfanew" ))->value_;
+      return dynamic_cast<Field<uint32_t>&>( *this->at( "16_dos_e_lfanew" ) ).value_;
    }
 
    virtual bool validate() const {
@@ -302,26 +304,26 @@ public:
    COFF_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
-      this->insert( { "01_coff_signature",            new Field<uint32_t>( 0x00, "coff_signature"          , 0                   ) } );
-      this->insert( { "02_coff_machine",              new Field<uint16_t>( 0x04, "Machine"                 , AS_HEX | WITH_FLAG  ) } );
-      this->insert( { "03_coff_sections",             new Field<uint16_t>( 0x06, "Number of Sections"      , AS_DEC              ) } );
-      this->insert( { "04_coff_timedatestamp",        new Field<uint32_t>( 0x08, "Date/time stamp"         , AS_DEC | WITH_TIME  ) } );
-      this->insert( { "05_coff_PointerToSymbolTable", new Field<uint32_t>( 0x0C, "Symbol Table offset"     , AS_DEC              ) } );
-      this->insert( { "06_coff_NumberOfSymbols",      new Field<uint32_t>( 0x10, "Number of symbols"       , AS_DEC              ) } );
-      this->insert( { "07_coff_SizeOfOptionalHeader", new Field<uint16_t>( 0x14, "Size of optional header" , AS_HEX              ) } );
-      this->insert( { "08_coff_characteristics",      new Field<uint16_t>( 0x16, "Characteristics"         , AS_HEX | WITH_FLAGS ) } );
+      this->insert( { "01_coff_signature",            make_unique<Field<uint32_t>>( 0x00, "coff_signature"          , 0                   ) } );
+      this->insert( { "02_coff_machine",              make_unique<Field<uint16_t>>( 0x04, "Machine"                 , AS_HEX | WITH_FLAG  ) } );
+      this->insert( { "03_coff_sections",             make_unique<Field<uint16_t>>( 0x06, "Number of Sections"      , AS_DEC              ) } );
+      this->insert( { "04_coff_timedatestamp",        make_unique<Field<uint32_t>>( 0x08, "Date/time stamp"         , AS_DEC | WITH_TIME  ) } );
+      this->insert( { "05_coff_PointerToSymbolTable", make_unique<Field<uint32_t>>( 0x0C, "Symbol Table offset"     , AS_DEC              ) } );
+      this->insert( { "06_coff_NumberOfSymbols",      make_unique<Field<uint32_t>>( 0x10, "Number of symbols"       , AS_DEC              ) } );
+      this->insert( { "07_coff_SizeOfOptionalHeader", make_unique<Field<uint16_t>>( 0x14, "Size of optional header" , AS_HEX              ) } );
+      this->insert( { "08_coff_characteristics",      make_unique<Field<uint16_t>>( 0x16, "Characteristics"         , AS_HEX | WITH_FLAGS ) } );
    }
 
    /// @return The file offset to the top of the section table
    uint32_t get_section_table_offset() {
       // The first section starts immediately after the optional header...
       // So, it's at: file_offset_ + 18 (size of the COFF header) + coff_SizeOfOptionalHeader
-      return file_offset_ + 0x18 + dynamic_cast<Field<uint16_t>*>(this->at( "07_coff_SizeOfOptionalHeader" ))->value_;
+      return file_offset_ + 0x18 + dynamic_cast<Field<uint16_t>&>( *this->at( "07_coff_SizeOfOptionalHeader" ) ).value_;
    }
 
    /// @return The number of sections in this PEFile
    uint16_t get_number_of_sections() {
-      return dynamic_cast<Field<uint16_t>*>(this->at( "03_coff_sections" ))->value_;
+      return dynamic_cast<Field<uint16_t>&>( *this->at( "03_coff_sections" ) ).value_;
    }
 
    virtual bool validate() const {
@@ -329,7 +331,7 @@ public:
          return false;
       }
 
-      const uint16_t signature = dynamic_cast<Field<uint32_t>*>(this->at( "01_coff_signature" ))->value_;
+      const uint16_t signature = dynamic_cast<Field<uint32_t>&>( *this->at( "01_coff_signature" ) ).value_;
       if( signature != 0x4550 ) { // Validate the magic is "PE"
          return false;
       }
@@ -353,13 +355,13 @@ public:
    Section_FieldMap( const size_t new_file_offset ) {
       file_offset_ = new_file_offset;
 
-      this->insert( { "01_section_name",                new Field<uint64_t>( 0x00, "    Name"                 , AS_CHAR             ) } );
-      this->insert( { "02_section_virtual_size",        new Field<uint32_t>( 0x08, "    Virtual Size"         , AS_DEC | AS_HEX     ) } );
-      this->insert( { "03_section_virtual_Address",     new Field<uint32_t>( 0x0C, "    Virtual Address"      , AS_HEX              ) } );
-      this->insert( { "04_section_raw_size",            new Field<uint32_t>( 0x10, "    Size Of Raw Data"     , AS_DEC | AS_HEX     ) } );
-      this->insert( { "05_section_raw_offset",          new Field<uint32_t>( 0x14, "    Pointer To Raw Data"  , AS_HEX              ) } );
-      this->insert( { "06_section_NumberOfRelocations", new Field<uint16_t>( 0x20, "    Number Of Relocations", AS_HEX              ) } );
-      this->insert( { "07_section_characteristics",     new Field<uint32_t>( 0x24, "    Characteristics"      , AS_HEX | WITH_FLAGS ) } );
+      this->insert( { "01_section_name",                make_unique<Field<uint64_t>>( 0x00, "    Name"                 , AS_CHAR             ) } );
+      this->insert( { "02_section_virtual_size",        make_unique<Field<uint32_t>>( 0x08, "    Virtual Size"         , AS_DEC | AS_HEX     ) } );
+      this->insert( { "03_section_virtual_Address",     make_unique<Field<uint32_t>>( 0x0C, "    Virtual Address"      , AS_HEX              ) } );
+      this->insert( { "04_section_raw_size",            make_unique<Field<uint32_t>>( 0x10, "    Size Of Raw Data"     , AS_DEC | AS_HEX     ) } );
+      this->insert( { "05_section_raw_offset",          make_unique<Field<uint32_t>>( 0x14, "    Pointer To Raw Data"  , AS_HEX              ) } );
+      this->insert( { "06_section_NumberOfRelocations", make_unique<Field<uint16_t>>( 0x20, "    Number Of Relocations", AS_HEX              ) } );
+      this->insert( { "07_section_characteristics",     make_unique<Field<uint32_t>>( 0x24, "    Characteristics"      , AS_HEX | WITH_FLAGS ) } );
    }
 
    virtual void print() const {
@@ -420,13 +422,13 @@ public:
       cout << "Sections" << endl;
 
       for( size_t i = 0 ; i < coff_header_map.get_number_of_sections() ; i++ ) {
-         Section_FieldMap* newSection = new Section_FieldMap { coff_header_map.get_section_table_offset() + (i * 0x28) };
-         newSection->parse( buffer_ );
-         if( !newSection->validate() ) {
+         Section_FieldMap newSection { coff_header_map.get_section_table_offset() + (i * 0x28) };
+         newSection.parse( buffer_ );
+         if( !newSection.validate() ) {
             cout << "A section header is invalid" << endl;
             exit( 1 );
          }
-         newSection->print();
+         newSection.print();
          //sections.push_back( newSection );
          cout << endl;
       }
