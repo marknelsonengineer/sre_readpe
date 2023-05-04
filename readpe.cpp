@@ -139,7 +139,7 @@ public:
       }
 
       stringstream charString;
-      for( size_t i = 0 ; i < sizeof( value_ ) ; i++ ) {
+      for( size_t i { 0 } ; i < sizeof( value_ ) ; i++ ) {
          charString << *(((char*)&value_) + i);
       }
 
@@ -181,7 +181,7 @@ public:
    virtual void print_characteristics( const string label ) const override {
       cout << "    Characteristics names" << endl;
 
-      for( size_t i = 0 ; i < sizeof( T )*8 ; i++ ) {
+      for( size_t i { 0 } ; i < sizeof( T )*8 ; i++ ) {
          T mask = 1 << i;
          if( value_ & mask ) {
             cout << std::setw(42) << std::setfill( ' ' ) << "";
@@ -201,7 +201,7 @@ public:
 /// A generic Map of Field objects
 class FieldMap : public map<string, FieldBase*> {
 protected:
-   size_t file_offset_ = 0;  ///< Offset into PEFile.buffer_ where this group of fields start
+   size_t file_offset_ { 0 };  ///< Offset into PEFile.buffer_ where this group of fields start
 
 public:
    /// Validate each Field in this Map (generic)
