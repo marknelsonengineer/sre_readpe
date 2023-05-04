@@ -14,7 +14,7 @@
 CC        = g++
 CFLAGS    = -Wall -Wextra $(DEBUG_CFLAGS) -std=c++17 -g -O0
 LINT      = clang-tidy
-LINTFLAGS = --quiet
+LINTFLAGS = --quiet --extra-arg-before=-std=c++17
 
 valgrind: CFLAGS   += -DTESTING -g -O0 -fno-inline
 valgrind: CXXFLAGS +=           -g -O0 -fno-inline -march=x86-64 -mtune=generic
