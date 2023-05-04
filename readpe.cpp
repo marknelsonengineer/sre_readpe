@@ -417,7 +417,6 @@ public:
       dos_field_map_.print();
 
       uint32_t coff_offset = dos_field_map_.get_exe_header_offset();
-      (void) coff_offset;
 
       COFF_FieldMap coff_header_map { coff_offset };
       coff_header_map.parse( buffer_ );
@@ -427,7 +426,7 @@ public:
       }
       coff_header_map.print();
 
-      std::vector<Section_FieldMap*> sections;
+      // std::vector<Section_FieldMap*> sections;
       cout << "Sections" << endl;
 
       for( size_t i = 0 ; i < coff_header_map.get_number_of_sections() ; i++ ) {
