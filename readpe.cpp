@@ -9,6 +9,7 @@
 /// @author Mark Nelson <marknels@hawaii.edu>
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <execution> // For execution::par
 #include <fstream>   // For file_path_
 #include <iomanip>   // For setfill()
 #include <iostream>  // For cout cerr endl
@@ -207,19 +208,13 @@ protected:
    size_t file_offset_ = 0;  ///< Offset into PEFile.buffer_ where this group of fields start
 
 public:
-   /// Validate each of the fields in this Map (generic)
+   /// Validate each Field in this Map (generic)
+   /// There's nothing to validate for a generic `map` nor #file_offset_
    virtual bool validate() const {
-      for (const auto& [label, field] : *this ) {
-         if( !field->validate() ) {
-            return false;
-         }
-      }
-
-      // There's nothing to validate for a generic map
-
-      // There's nothing to validate for file_offset_
-
-      return true;  /// @return `true` if everything is valid.  `false` if there's a problem.
+      return all_of( execution::par, this->cbegin(), this->cend(),
+                [](pair<string, FieldBase*> i) {  // This is a Lambda expression
+         return i.second->validate();
+      } );  /// @return `true` if everything is valid.  `false` if there's a problem.
    }
 
    /// Parse data from PEFile.buffer_ to populate Field.value_
@@ -432,6 +427,10 @@ public:
       for( size_t i = 0 ; i < coff_header_map.get_number_of_sections() ; i++ ) {
          Section_FieldMap* newSection = new Section_FieldMap { coff_header_map.get_section_table_offset() + (i * 0x28) };
          newSection->parse( buffer_ );
+         if( !newSection->validate() ) {
+            cout << "A section header is invalid" << endl;
+            exit( 1 );
+         }
          newSection->print();
          //sections.push_back( newSection );
          cout << endl;
