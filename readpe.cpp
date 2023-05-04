@@ -206,13 +206,10 @@ protected:
 public:
    /// Validate each Field in this Map (generic)
    /// There's nothing to validate for a generic `map` nor #file_offset_
-   virtual bool validate() const {
-      for (const auto& [label, field] : *this ) {
-         if( ! (*field).validate() ) {
-            return false;
-         }
-      }
-      return true;  /// @return `true` if everything is valid.  `false` if there's a problem.
+   virtual bool validate() const {  /// This is a parallel iterator that uses a Lambda expression
+      return all_of( execution::par, this->cbegin(), this->cend(),
+                     [](const auto& fieldBase) { return fieldBase.second->validate(); }
+      );  /// @return `all_of()` returns `true` when the Lambda expression returns `true` for **all** of the elements in the range
    }
 
    /// Parse data from PEFile.buffer_ to populate Field.value_
