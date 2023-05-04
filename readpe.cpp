@@ -89,11 +89,10 @@ public:
       return rules_;  /// @return Special processing rules for this Field
    }
 
-   /// @return `true` if this Field is healthy.  `false` if there's a problem.
-   virtual bool validate() const {
+   /// Validate this object
+   virtual void validate() const {
       /// Nothing to validate for #offset_ and #rules_
-      if( description_.empty() ) { return false; }
-      return true;
+      if( description_.empty() ) { throw length_error( "Description can not be empty" ); }
    }
 
    /// We don't really want Field.value_... we really want the value as a `string`!
@@ -207,10 +206,10 @@ protected:
 public:
    /// Validate each Field in this Map (generic)
    /// There's nothing to validate for a generic `map` nor #file_offset_
-   virtual bool validate() const {  /// This is a parallel iterator that uses a Lambda expression
-      return all_of( execution::par, this->cbegin(), this->cend(),
-                     [](const auto& fieldBase) { return fieldBase.second->validate(); }
-      );  /// @return `all_of()` returns `true` when the Lambda expression returns `true` for **all** of the elements in the range
+   virtual void validate() const {
+      for (const auto& [label, field] : *this ) {
+         (*field).validate();
+      }
    }
 
    /// Parse data from PEFile.buffer_ to populate Field.value_
@@ -276,14 +275,12 @@ public:
       return dynamic_cast<Field<uint32_t>&>( *this->at( "16_dos_e_lfanew" ) ).value_;
    }
 
-   virtual bool validate() const {
-      if( !FieldMap::validate() ) { return false; }
+   virtual void validate() const {
+      FieldMap::validate();
 
       if( this->at("01_dos_e_magic")->get_value() != "0x5a4d (MZ)" ) { // Validate the magic is "MZ"
-         return false;
+         throw( domain_error( "Invalid magic in DOS header" ) );
       }
-
-      return true ;
    }
 
    virtual void print() const {
@@ -324,17 +321,13 @@ public:
       return dynamic_cast<Field<uint16_t>&>( *this->at( "03_coff_sections" ) ).value_;
    }
 
-   virtual bool validate() const {
-      if( !FieldMap::validate() ) {
-         return false;
-      }
+   virtual void validate() const {
+      FieldMap::validate();
 
       const uint16_t signature = dynamic_cast<Field<uint32_t>&>( *this->at( "01_coff_signature" ) ).value_;
       if( signature != 0x4550 ) { // Validate the magic is "PE"
-         return false;
+         throw( domain_error( "Invalid COFF signature magic") );
       }
-
-      return true ;
    }
 
    virtual void print() const {
@@ -404,18 +397,14 @@ public:
       DOS_FieldMap dos_field_map_;
 
       dos_field_map_.parse( buffer_ );
-      if( !dos_field_map_.validate() ) {
-         throw( domain_error( "The DOS header is invalid" ));
-      }
+      dos_field_map_.validate();
       dos_field_map_.print();
 
       const uint32_t coff_offset = dos_field_map_.get_exe_header_offset();
 
       COFF_FieldMap coff_header_map { coff_offset };
       coff_header_map.parse( buffer_ );
-      if( !coff_header_map.validate() ) {
-         throw( domain_error( "The COFF header is invalid" ));
-      }
+      coff_header_map.validate();
       coff_header_map.print();
 
       // std::vector<Section_FieldMap*> sections;
@@ -424,9 +413,7 @@ public:
       for( size_t i = 0 ; i < coff_header_map.get_number_of_sections() ; i++ ) {
          Section_FieldMap newSection { coff_header_map.get_section_table_offset() + (i * 0x28) };
          newSection.parse( buffer_ );
-         if( !newSection.validate() ) {
-            throw( domain_error( "A section header is invalid" ));
-         }
+         newSection.validate();
          newSection.print();
          //sections.push_back( newSection );
          cout << endl;
