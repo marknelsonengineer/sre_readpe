@@ -442,15 +442,18 @@ public:
 /// Main entry point for readpe
 /// @param argc The number of arguments
 /// @param argv An array of arguments as strings
-int main( int argc,
-          char* argv[] ) {
-    if( argc <= 1 ) {
-       cout << "Usage:  readpe PEfile" << endl;
-    }
+int main( int argc, char* argv[] ) {
+   try {
+      if( argc <= 1 ) {
+         cout << "Usage:  readpe PEfile" << endl;
+      }
 
-    /// @todo Convert into a for() loop and process all of the files on the command line
-    PEFile pe_file( argv[1] );
-    pe_file.print();
+      /// @todo Convert into a for() loop and process all of the files on the command line
+      PEFile pe_file( argv[1] );
+      pe_file.print();
 
-    return 0;  /// @return The result code for this program
+      return 0;  /// @return The result code for this program
+   } catch ( exception& catchAll ) {
+      cout << "readpe threw an uncaught exception" << endl;
+   }
 }
