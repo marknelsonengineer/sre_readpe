@@ -11,7 +11,7 @@
 ###############################################################################
 
 ---
-Checks:          '-checks=-*,boost-*,bugprone-*,cert-*,clang-analyzer-*,llvm-*,-llvm-header-guard,misc-*,performance-*,portability-*,readability-*,-readability-implicit-bool-conversion,-cert-msc30-c,-cert-msc50-cpp,-readability-redundant-access-specifiers,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-misc-non-private-member-variables-in-classes,-readability-magic-numbers'
+Checks:          '-checks=-*,boost-*,bugprone-*,cert-*,clang-analyzer-*,llvm-*,-llvm-header-guard,misc-*,performance-*,portability-*,readability-*,-readability-implicit-bool-conversion,-cert-msc30-c,-cert-msc50-cpp,-readability-redundant-access-specifiers,-misc-non-private-member-variables-in-classes,-bugprone-easily-swappable-parameters,-cert-err58-cpp,-cert-msc51-cpp,-cert-msc32-c,-readability-magic-numbers'
 WarningsAsErrors: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
