@@ -230,12 +230,11 @@ public:
             continue;                   // We may need to bring in a field
          }                              // for validation that we don't want to print
 
-         cout << "    "
-                   << setfill( ' ' )  // Space pad
-                   << left            // Left justify
-                   << setw(34) << field->get_description() + ":"
-                   << field->get_value()
-                   << endl ;
+         cout << "    " << setfill( ' ' )  // Space pad
+                        << left            // Left justify
+                        << setw(34) << field->get_description() + ":"
+                        << field->get_value()
+                        << endl ;
 
          if( field->get_rules() & WITH_FLAGS ) {
             field->print_characteristics( label );
