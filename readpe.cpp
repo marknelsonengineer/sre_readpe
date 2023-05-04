@@ -401,8 +401,7 @@ public:
 
       dos_field_map_.parse( buffer_ );
       if( !dos_field_map_.validate() ) {
-         cout << "The DOS header is invalid" << endl;
-         exit( 1 );
+         throw( domain_error( "The DOS header is invalid" ));
       }
       dos_field_map_.print();
 
@@ -411,8 +410,7 @@ public:
       COFF_FieldMap coff_header_map { coff_offset };
       coff_header_map.parse( buffer_ );
       if( !coff_header_map.validate() ) {
-         cout << "The COFF header is invalid" << endl;
-         exit( 1 );
+         throw( domain_error( "The COFF header is invalid" ));
       }
       coff_header_map.print();
 
@@ -423,8 +421,7 @@ public:
          Section_FieldMap newSection { coff_header_map.get_section_table_offset() + (i * 0x28) };
          newSection.parse( buffer_ );
          if( !newSection.validate() ) {
-            cout << "A section header is invalid" << endl;
-            exit( 1 );
+            throw( domain_error( "A section header is invalid" ));
          }
          newSection.print();
          //sections.push_back( newSection );
@@ -440,7 +437,7 @@ public:
 int main( int argc, char* argv[] ) {
    try {
       if( argc <= 1 ) {
-         cout << "Usage:  readpe PEfile" << endl;
+         throw( invalid_argument( "Usage:  readpe PEfile" ) );
       }
 
       /// @todo Convert into a for() loop and process all of the files on the command line
@@ -448,7 +445,8 @@ int main( int argc, char* argv[] ) {
       pe_file.print();
 
       return 0;  /// @return The result code for this program
-   } catch ( exception& catchAll ) {
-      cout << "readpe threw an uncaught exception" << endl;
+   } catch ( exception& generalException ) {
+      cout << generalException.what() << endl;
+      exit( EXIT_FAILURE );
    }
 } // main()
