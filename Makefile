@@ -11,8 +11,13 @@
 ### @author  Mark Nelson marknels@hawaii.edu>
 ###############################################################################
 
-CC     = g++
-CFLAGS = -Wall -Wextra $(DEBUG_CFLAGS) -std=c++17 -g -O0
+CC        = g++
+CFLAGS    = -Wall -Wextra $(DEBUG_CFLAGS) -std=c++17 -g -O0
+LINT      = clang-tidy
+LINTFLAGS = --quiet
+
+valgrind: CFLAGS   += -DTESTING -g -O0 -fno-inline
+valgrind: CXXFLAGS +=           -g -O0 -fno-inline -march=x86-64 -mtune=generic
 
 SRCS = readpe.cpp
 
@@ -28,11 +33,19 @@ $(MAIN): $(OBJS)
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
-doc: $(TARGET)
+doc: $(MAIN)
 	doxygen .doxygen/Doxyfile
 
 test: $(MAIN)
 	./$(MAIN) catnap64.exe
+
+lint: $(MAIN)
+	$(LINT) $(LINTFLAGS) $(SRCS) --
+
+valgrind: $(MAIN)
+	sudo DEBUGINFOD_URLS="https://debuginfod.archlinux.org"                    \
+	valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --quiet  \
+	./$(MAIN) ./catnap32.exe
 
 clean:
 	rm -f $(OBJS) $(MAIN)

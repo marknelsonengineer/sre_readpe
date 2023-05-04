@@ -9,12 +9,12 @@
 /// @author Mark Nelson <marknels@hawaii.edu>
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>  // For cout cerr endl
 #include <fstream>   // For file_path_
-#include <vector>    // For vector
-#include <map>       // For map
 #include <iomanip>   // For setfill()
+#include <iostream>  // For cout cerr endl
+#include <map>       // For map
 #include <string>    // For string
+#include <vector>    // For vector
 
 #include <boost/algorithm/string/trim.hpp>  // For boost::algorithm::trim_copy()
 #include <boost/core/typeinfo.hpp>          // For boost::core::demangle()
@@ -105,7 +105,7 @@ public:
    /// Print the characteristics #flags
    /// @param label The field to search in the #flags map
    virtual void print_characteristics(
-           const string label ) const = 0;
+           string label ) const = 0;
 }; // FieldBase
 
 
@@ -156,8 +156,8 @@ public:
 
       if( rules_ & WITH_TIME ) {
          resultString << "(";
-         time_t t = value_;
-         tm tm = *gmtime(&t);
+         const time_t t = value_;
+         const tm tm = *gmtime(&t);
          resultString << put_time(&tm, "%c %Z");
          resultString << ")";
       }
@@ -232,7 +232,7 @@ public:
    /// Print this FieldMap (generic)
    virtual void print() const {
       for (const auto& [label, field] : *this ) {
-         string valueAsString = field->get_value();
+         const string valueAsString = field->get_value();
 
          if( valueAsString.empty() ) {  // If it's empty, then skip it
             continue;                   // We may need to bring in a field
@@ -338,7 +338,7 @@ public:
          return false;
       }
 
-      uint16_t signature = dynamic_cast<Field<uint32_t>*>(this->at( "01_coff_signature" ))->value_;
+      const uint16_t signature = dynamic_cast<Field<uint32_t>*>(this->at( "01_coff_signature" ))->value_;
       if( signature != 0x4550 ) { // Validate the magic is "PE"
          return false;
       }
