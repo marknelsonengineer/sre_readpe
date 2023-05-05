@@ -128,6 +128,7 @@ public:
            ,value_       { T() }
    {}
 
+   /// We don't really want Field.value_... we really want the value as a `string`!
    string get_value() const override {
       stringstream resultString;
 
@@ -168,16 +169,19 @@ public:
          }
       }
 
-      return resultString.str();
+      return resultString.str();  ///< @return The value of Field.value_ (as a string)
    } // get_value()
 
+   /// Extract bytes from PEFile.buffer_ using `file_offset` and #offset_ and set Field.value_
    virtual void set_value(
-           vector<char>& file_buffer
-          ,size_t file_offset
+           vector<char>& file_buffer  ///< A pointer to PEFile.buffer_
+          ,size_t file_offset         ///< The PEFile.buffer_ offset to the start of this group of fields (not necessarily this particular field)
           ) override {
       memcpy( &value_, &file_buffer[file_offset + offset_], sizeof(value_) );
    }
 
+   /// Print the characteristics #flags
+   /// @param label The field to search in the #flags map
    virtual void print_characteristics( const string label ) const override {
       cout << "    Characteristics names" << endl;
 
@@ -196,6 +200,22 @@ public:
       }
    } // print_characteristics()
 }; // Field
+
+
+/// Specialized DOS Magic Field
+class Field_DOS_Magic : public Field<uint16_t> {
+public:
+   /// Construct a Field with an offset, description and rules.
+   Field_DOS_Magic( const size_t  new_offset       ///< The offset into this section of fields
+                   ,const string& new_description  ///< The description of this Field
+                   ,const Rules   new_rules        ///< Special processing rules for this Field such as #AS_HEX or #WITH_TIME
+   ) : Field( new_offset, new_description, new_rules ) {}
+
+   virtual void validate() const override {
+      Field::validate();
+      if( value_ != 0x5a4d ) { throw domain_error( "Invalid magic in DOS header" ); }
+   }
+};
 
 
 /// A generic Map of Field objects
@@ -252,7 +272,7 @@ public:
    DOS_FieldMap() {
       file_offset_ = 0;
 
-      this->insert( { "01_dos_e_magic",    make_unique<Field<uint16_t>>( 0x00, "Magic number"                , AS_HEX | AS_CHAR ) } );
+      this->insert( { "01_dos_e_magic",    make_unique<Field_DOS_Magic>( 0x00, "Magic number"                , AS_HEX | AS_CHAR ) } );
       this->insert( { "02_dos_e_cblp",     make_unique<Field<uint16_t>>( 0x02, "Bytes in last page"          , AS_DEC           ) } );
       this->insert( { "03_dos_e_cp",       make_unique<Field<uint16_t>>( 0x04, "Pages in file"               , AS_DEC           ) } );
       this->insert( { "04_dos_e_crlc",     make_unique<Field<uint16_t>>( 0x06, "Relocations"                 , AS_DEC           ) } );
@@ -273,14 +293,6 @@ public:
    /// @return The PEFile.buffer_ offset to the COFF section
    uint32_t get_exe_header_offset() {
       return dynamic_cast<Field<uint32_t>&>( *this->at( "16_dos_e_lfanew" ) ).value_;
-   }
-
-   virtual void validate() const {
-      FieldMap::validate();
-
-      if( this->at("01_dos_e_magic")->get_value() != "0x5a4d (MZ)" ) { // Validate the magic is "MZ"
-         throw( domain_error( "Invalid magic in DOS header" ) );
-      }
    }
 
    virtual void print() const {
