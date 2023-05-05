@@ -37,7 +37,7 @@ doc: $(MAIN)
 	doxygen .doxygen/Doxyfile
 
 test: $(MAIN)
-	./$(MAIN) catnap64.exe
+	./$(MAIN) ./exe_files/catnap64.exe
 
 lint: $(MAIN)
 	$(LINT) $(LINTFLAGS) $(SRCS) --
